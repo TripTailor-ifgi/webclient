@@ -27,7 +27,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         map: resolve(__dirname, 'map/index.html'),
-        quiz: resolve(__dirname, 'quiz/index.html')
+        quiz: resolve(__dirname, 'quiz2/index.html')
       }
     }
    }
