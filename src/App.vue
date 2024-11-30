@@ -4,53 +4,46 @@
 
 <template>
   <div class="tourist-routes">
-    <!-- Header -->
     <header class="header">
-      <div class="logo">ICON</div>
+      <div class="brand">
+        <img class="logo" src="./assets/logo_pre_sketch.png"/>
+        <p>TripTailor</p>
+      </div>
       <nav>
         <ul>
-          <li><a href="/map/">About</a></li>
-          <li><a href="/quiz/">Services</a></li>
+          <li><a href="#">About</a></li>
+          <li><a href="/quiz/">Customizer</a></li>
           <li><a href="https://github.com/TipTailor" target="_blank">GitHub</a></li>
-          <li><a href="/login/">Log In</a></li>
+          <li><a href="#">Log In</a></li>
         </ul>
       </nav>
     </header>
-
-    <!-- Hero Section -->
+    <!-- Full Frame Landing Page section -->
     <section class="hero">
       <div class="hero-text">
-        <h1>Tourist Routes - <br> <span>Made for You</span></h1>
-        <button @click="learnMore">Learn More</button>
+        <span class="headline">Trips tailored to blow your mind</span>
+        <span class="headline-add">legally</span>
+        <button @click="test">Learn More</button>
       </div>
-      <div class="hero-image">
-        <p>IMAGE</p>
-      </div>
+      <img class="hero-image" src="./assets/Route_Sketch.png"/>
     </section>
 
     <!-- Main Content -->
-    <main>
+    <main ref="mainsection">
       <!-- Preference Section -->
       <section class="preference">
-        <div class="text">
-          <h2>Tell us your preference</h2>
-          <p>Let us do the work</p>
-        </div>
         <div class="image">
-          <p>IMAGE</p>
-          <button @click="startNow">Start Now</button>
+          <a href="/login/">Start Now</a>
         </div>
-      </section>
-
-      <!-- Content Section -->
-      <section class="content">
-        <div class="image">IMAGE</div>
-        <div class="something">Something</div>
+        <div class="preference-text">
+          <span class="headline">Select your Preference</span>
+          <span class="headline-add">Let us do the Planning</span>
+        </div>
       </section>
 
       <!-- Statistics Section -->
       <section class="stats">
-        <p>Statistics / Dashboard</p>
+        <span class="headline">Statistics / Dashboard coming soon</span>
       </section>
     </main>
 
@@ -71,7 +64,7 @@
 
 .tourist-routes {
   background-color: var(--tt-green);
-  color: var(--tt-light-green);
+  color: var(--tt-dark-green);
   line-height: 1.6;
 }
 
@@ -82,12 +75,19 @@
   align-items: center;
   padding: 20px;
   background-color: var(--tt-dark-green);
-}
-
-.header .logo {
   font-size: 1.5rem;
   font-weight: bold;
   color: var(--tt-light-green);
+}
+.brand{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo{
+  height: 3rem;
+  padding-right: 20px;
 }
 
 .header nav ul {
@@ -104,67 +104,110 @@
 
 /* Hero Section */
 .hero {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  justify-items: center;
+}
+
+.hero-text, .preference-text{
+  width: 100%;
+  display:flex ;
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  padding: 50px;
-  color: var(--tt-light-green);
+  height: 50vh;
+}
+.hero-text{
+  background-color: var(--tt-light-green);
+  box-shadow: 10px 0 6px -6px var(--tt-light-green);
+}
+.hero-text .headline, .hero-text .headline-add, .stats .headline {
+  font-size: 3.5rem;
 }
 
-.hero-text h1 {
-  font-size: 2.5rem;
-}
-
-.hero-text span {
+.hero-text .headline-add {
   font-style: italic;
+  color: var(--tt-green);
+  font-weight: bold;
 }
 
-.hero-text button, .preference button {
+.hero-text button, .preference a {
   margin-top: 20px;
   padding: 10px 20px;
-  background-color: var(--tt-light-green);
-  color: var(--tt-dark-green);
+  background-color: var(--tt-dark-green);
+  color: var(--tt-light-green);
   border: none;
   border-radius: 5px;
   cursor: pointer;
 }
 
-.hero-image {
-  width: 50%;
-  text-align: center;
-  background: var(--tt-green);
-  padding: 50px;
+
+.hero-image{
+  width: 100%;
+  height: 100%;
+  max-height: 50vh;
+  object-fit: cover;
+  z-index: -1;
 }
 
 /* Main Content */
 main {
-  padding: 20px;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  justify-items: center;
 }
 
-.preference,
-.content {
+.preference{
+  width: 100%;
+  grid-column: 1/3;
+  grid-row: 1;
   display: flex;
   justify-content: space-between;
-  gap: 20px;
-  margin: 20px 0;
 }
 
-.preference .text,
-.preference .image,
-.content .image,
-.content .something {
-  width: 48%;
-  background: var(--tt-green);
-  padding: 20px;
+.preference a{
+  text-decoration: none;
+  
+}
+
+.preference-text{
+  background-color: var(--tt-dark-green);
+  color: var(--tt-light-green);
+  box-shadow: -10px 0 6px -6px var(--tt-dark-green);
+}
+.preference-text .headline, .preference-text .headline-add {
+  font-size: 3.5rem;
+}
+.preference-text  .headline {
+  color: var(--tt-green);
+}
+.preference-text  .headline-add {
+  font-style: italic;
+  color: var(--tt-light-green);
+  font-weight: bold;
+}
+
+.preference .image{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 50%;
+  background-image: url("./assets/Route_Sketch.png");
   text-align: center;
+  z-index: -1;
 }
 
 /* Statistics Section */
 .stats {
-  text-align: center;
-  padding: 20px;
-  background: var(--tt-dark-green);
-  color: var(--tt-light-green);
+  width: 100%;
+  grid-column: 1/3;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--tt-light-green);
+  color: var(--tt-dark-green);
 }
 
 /* Footer */
