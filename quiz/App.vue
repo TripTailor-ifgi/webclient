@@ -333,8 +333,54 @@ export default {
 </template>
 
 <style scoped>
-.quiz-container {
-  max-width: 600px;
-  margin: 0 auto;
-}
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f8f9fa;
+    }
+
+        body {
+        font-family: Arial, sans-serif;
+        background-color: #f8f9fa;
+        color: var(-tt-dark);
+    }
+
+    .quiz-container {
+              max-width: 600px;
+              margin: 0 auto;
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .list-group-item {
+        cursor: pointer;
+    }
+
+    .list-group-item input[type="checkbox"] {
+        margin-right: 10px;
+    }
+
+    .progress-bar {
+        text-align: center;
+        font-weight: bold;
+        background-color: #4caf50 !important;
+            border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .list-group-item {
+        cursor: pointer;
+    }
+
+    .list-group-item input[type="checkbox"] {
+        margin-right: 10px;
+    }
+
+    .progress-bar {
+        text-align: center;
+        font-weight: bold;
+        background-color: var(--tt) !important;
+    }
 </style>

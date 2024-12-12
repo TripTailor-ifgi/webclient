@@ -18,27 +18,24 @@
         </ul>
       </nav>
     </header>
-    <!-- Full Frame Landing Page section -->
-    <section class="hero">
+
+    <section class="hero"><!--Bild von <a href="https://pixabay.com/de/users/leonhard_niederwimmer-1131094/?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=8268841">Leonhard Niederwimmer</a> auf <a href="https://pixabay.com/de//?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=8268841">Pixabay</a>-->
       <div class="hero-text">
         <span class="headline">Trips tailored to blow your mind</span>
         <span class="headline-add">legally</span>
-        <button @click="test">Learn More</button>
+        <a href="/login/">Start Now</a>
       </div>
-      <img class="hero-image" src="./assets/Route_Sketch.png"/>
     </section>
 
     <!-- Main Content -->
     <main ref="mainsection">
       <!-- Preference Section -->
       <section class="preference">
-        <div class="image">
-          <a href="/login/">Start Now</a>
-        </div>
         <div class="preference-text">
           <span class="headline">Select your Preference</span>
           <span class="headline-add">Let us do the Planning</span>
         </div>
+        <a href="/about/">Learn More</a>
       </section>
 
       <!-- Statistics Section -->
@@ -63,8 +60,8 @@
 }
 
 .tourist-routes {
-  background-color: var(--tt-green);
-  color: var(--tt-dark-green);
+  background-color: var(--tt);
+  color: var(--tt-dark);
   line-height: 1.6;
 }
 
@@ -74,10 +71,10 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  background-color: var(--tt-dark-green);
+  background-color: var(--tt-white-soft);
   font-size: 1.5rem;
   font-weight: bold;
-  color: var(--tt-light-green);
+  color: var(--tt-dark);
 }
 .brand{
   display: flex;
@@ -97,7 +94,7 @@
 }
 
 .header nav a {
-  color: var(--tt-light-green);
+  color: var(--tt-dark);
   text-decoration: none;
   font-size: 1rem;
 }
@@ -105,21 +102,22 @@
 /* Hero Section */
 .hero {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 1fr;
   justify-items: center;
 }
 
 .hero-text, .preference-text{
-  width: 100%;
   display:flex ;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 50vh;
 }
 .hero-text{
-  background-color: var(--tt-light-green);
-  box-shadow: 10px 0 6px -6px var(--tt-light-green);
+  width: 100%;
+  background-image: url("./assets/hero_bg.jpg");
+  background-position: center;
+  background-size: 100% auto;
+  height: 70vh;
 }
 .hero-text .headline, .hero-text .headline-add, .stats .headline {
   font-size: 3.5rem;
@@ -127,27 +125,24 @@
 
 .hero-text .headline-add {
   font-style: italic;
-  color: var(--tt-green);
+  color: var(--tt);
   font-weight: bold;
+  -webkit-text-stroke: 2px var(--tt-dark);
+}
+.hero .headline{
+    color: var(--tt-dark);
+    font-weight: bold;
 }
 
-.hero-text button, .preference a {
+.hero-text button, .hero-text a, .preference a {
   margin-top: 20px;
   padding: 10px 20px;
-  background-color: var(--tt-dark-green);
-  color: var(--tt-light-green);
+  background-color: var(--tt);
+  color: var(--tt-dark);
   border: none;
   border-radius: 5px;
   cursor: pointer;
-}
-
-
-.hero-image{
-  width: 100%;
-  height: 100%;
-  max-height: 50vh;
-  object-fit: cover;
-  z-index: -1;
+  text-decoration: none;
 }
 
 /* Main Content */
@@ -163,39 +158,26 @@ main {
   grid-column: 1/3;
   grid-row: 1;
   display: flex;
-  justify-content: space-between;
-}
-
-.preference a{
-  text-decoration: none;
-  
+  align-items: center;
+  justify-content: spacce-evenly;
+  height: 40vh;
 }
 
 .preference-text{
-  background-color: var(--tt-dark-green);
-  color: var(--tt-light-green);
-  box-shadow: -10px 0 6px -6px var(--tt-dark-green);
+  background-color: var(--tt-white-soft);
+  color: var(--tt-dark);
+  width: 80%;
 }
 .preference-text .headline, .preference-text .headline-add {
   font-size: 3.5rem;
 }
 .preference-text  .headline {
-  color: var(--tt-green);
+  color: var(--tt);
 }
 .preference-text  .headline-add {
   font-style: italic;
-  color: var(--tt-light-green);
+  color: var(--tt-dark);
   font-weight: bold;
-}
-
-.preference .image{
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 50%;
-  background-image: url("./assets/Route_Sketch.png");
-  text-align: center;
-  z-index: -1;
 }
 
 /* Statistics Section */
@@ -206,15 +188,16 @@ main {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--tt-light-green);
-  color: var(--tt-dark-green);
+  background-color: var(--tt-gray);
+  color: var(--tt-dark);
+  height: 40vh;
 }
 
 /* Footer */
 footer {
   text-align: center;
   padding: 10px;
-  background-color: var(--tt-dark-green);
-  color: var(--tt-light-green);
+  background-color: var(--tt-dark);
+  color: var(--tt-light);
 }
 </style>
