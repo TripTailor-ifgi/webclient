@@ -333,16 +333,11 @@ export default {
 </template>
 
 <style scoped>
-    body {
-        font-family: Arial, sans-serif;
-        background-color: #f8f9fa;
-    }
-
-        body {
+      body {
         font-family: Arial, sans-serif;
         background-color: #f8f9fa;
         color: var(-tt-dark);
-    }
+      }
 
     .quiz-container {
               max-width: 600px;
