@@ -17,8 +17,12 @@
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "^1.11.3",
     "element-plus": "^2.8.8",
+    "ol": "^10.3.1",
+    "ol-contextmenu": "^5.5.0",
+    "ol-ext": "^4.0.24",
     "pinia": "^2.2.6",
-    "vue": "^3.5.12"
+    "vue": "^3.5.12",
+    "vue3-openlayers": "^11.2.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",
