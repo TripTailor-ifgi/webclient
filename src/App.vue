@@ -1,29 +1,17 @@
 <script setup>
-
+import NavbarHeader  from "./components/Navbar.vue"
 </script>
 
 <template>
   <div class="tourist-routes">
-    <header class="header">
-      <div class="brand">
-        <img class="logo" src="./assets/logo_pre_sketch.png"/>
-        <p>TripTailor</p>
-      </div>
-      <nav>
-        <ul>
-          <li><a href="#">About</a></li>
-          <li><a href="/quiz/">Customizer</a></li>
-          <li><a href="https://github.com/TipTailor" target="_blank">GitHub</a></li>
-          <li><a href="#">Log In</a></li>
-        </ul>
-      </nav>
-    </header>
+    
+    <NavbarHeader/>
 
     <section class="hero"><!--Bild von <a href="https://pixabay.com/de/users/leonhard_niederwimmer-1131094/?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=8268841">Leonhard Niederwimmer</a> auf <a href="https://pixabay.com/de//?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=8268841">Pixabay</a>-->
       <div class="hero-text">
         <span class="headline">Trips tailored to blow your mind</span>
         <span class="headline-add">legally</span>
-        <a href="/login/">Start Now</a>
+        <a href="/quiz/">Start Now</a>
       </div>
     </section>
 
@@ -32,10 +20,10 @@
       <!-- Preference Section -->
       <section class="preference">
         <div class="preference-text">
-          <span class="headline">Select your Preference</span>
-          <span class="headline-add">Let us do the Planning</span>
+          <span class="headline">You already feel lost in a city even before you arrived?</span>
+          <span class="headline-add">We provide you with only the information you really need. <br/> Customized Trips, tailored for you!</span>
+          <a href="/about/">Learn More</a>
         </div>
-        <a href="/about/">Learn More</a>
       </section>
 
       <!-- Statistics Section -->
@@ -60,43 +48,8 @@
 }
 
 .tourist-routes {
-  background-color: var(--tt);
   color: var(--tt-dark);
   line-height: 1.6;
-}
-
-/* Header */
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  background-color: var(--tt-white-soft);
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: var(--tt-dark);
-}
-.brand{
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.logo{
-  height: 3rem;
-  padding-right: 20px;
-}
-
-.header nav ul {
-  list-style: none;
-  display: flex;
-  gap: 20px;
-}
-
-.header nav a {
-  color: var(--tt-dark);
-  text-decoration: none;
-  font-size: 1rem;
 }
 
 /* Hero Section */
@@ -159,17 +112,17 @@ main {
   grid-row: 1;
   display: flex;
   align-items: center;
-  justify-content: spacce-evenly;
+  justify-content: center;
   height: 40vh;
 }
 
 .preference-text{
   background-color: var(--tt-white-soft);
   color: var(--tt-dark);
-  width: 80%;
 }
 .preference-text .headline, .preference-text .headline-add {
   font-size: 3.5rem;
+  text-align: center;
 }
 .preference-text  .headline {
   color: var(--tt);
