@@ -1,5 +1,7 @@
+<script setup>
+  import NavbarHeader  from "@/components/Navbar.vue"
+</script>
 <script>
-import NavbarHeader  from "../src/components/Navbar.vue"
 import 'ol/ol.css';
 import * as ol from 'ol';
 import { fromLonLat } from 'ol/proj';
@@ -215,7 +217,7 @@ export default {
 
 
 <template>
-  <div id="app" class="route-planning-container">
+  <div class="route-planning-container">
     <NavbarHeader/>
     <div class="map-controls">
       <div id="poi-selector" class="control-panel">
@@ -242,13 +244,15 @@ export default {
 
 
 <style scoped>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
 .route-planning-container {
-  display: flex;
-  flex-direction: row; 
-  max-width: 100%;
-  margin: 0 auto;
-  padding: 20px;
-  position: relative;
+  color: var(--tt-dark);
+  line-height: 1.6;
 }
 
 .map-controls {
