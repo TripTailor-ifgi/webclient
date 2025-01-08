@@ -1,9 +1,6 @@
 <template>
         <svg id="svg">
-            
         </svg>
-        {{ console.log() }}
-    
 </template>
   
 <script>
