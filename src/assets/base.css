@@ -10,7 +10,7 @@
   --tt-divider-dark: rgba(84, 84, 84, 0.65);
 
   /* TripTailor specific colors*/
-  --tt-gray: rgb(232, 231, 231);
+  --tt-gray: #e8e7e7;
   --tt-light: #feecc2;
   --tt-dark: #291d00;
   --tt: #f2aa02;

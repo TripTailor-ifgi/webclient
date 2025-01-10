@@ -83,6 +83,14 @@ import { useLinesStore } from "@/stores/store.js"
         <DraggableLine/>
       </div>
       <div class="sidebar">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" role="switch" id="barrierFree">
+          <label class="form-check-label" for="barrierFree">Consider only barrier free locations</label>
+        </div>
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" role="switch" id="vegan">
+          <label class="form-check-label" for="barrierFree">Amenities should have a Vegan Option</label>
+        </div>
         <button class="plus" @click="addBox">Add location</button>
         <a class="start" href="/map/">Start Routing</a>
       </div>
@@ -155,5 +163,24 @@ select {
   font-size: 14px;
   cursor: pointer;
   z-index: 3;
+}
+
+[type="checkbox"] {
+  border-color: var(--tt-gray);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23e8e7e7'/%3e%3c/svg%3e");
+}
+[type="checkbox"]:checked {
+  background-color: var(--tt);
+  border-color: var(--tt-dark);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23291d00'/%3e%3c/svg%3e");
+}
+[type="checkbox"]:focus, [type="checkbox"]:active {
+  box-shadow: 0 0 0 0.25rem var(--tt-light);
+  border-color: var(--tt-dark);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23291d00'/%3e%3c/svg%3e");
+}
+[type="checkbox"]:active{
+  background-color: var(--tt-light);
+  filter: unset;
 }
 </style>
