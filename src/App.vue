@@ -7,7 +7,7 @@ import NavbarHeader  from "./components/Navbar.vue"
     
     <NavbarHeader/>
 
-    <section class="hero"><!--Bild von <a href="https://pixabay.com/de/users/leonhard_niederwimmer-1131094/?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=8268841">Leonhard Niederwimmer</a> auf <a href="https://pixabay.com/de//?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=8268841">Pixabay</a>-->
+    <section class="hero"><!--Bild von <a href="https://pixabay.com/de/users/karinkarin-145974/?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=1662569">KarinKarin</a> auf <a href="https://pixabay.com/de//?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=1662569">Pixabay</a> -->
       <div class="hero-text">
         <span class="headline">Trips tailored to blow your mind</span>
         <span class="headline-add">legally</span>
@@ -21,7 +21,7 @@ import NavbarHeader  from "./components/Navbar.vue"
       <section class="preference">
         <div class="preference-text">
           <span class="headline">You already feel lost in a city even before you arrived?</span>
-          <span class="headline-add">We provide you with only the information you really need. <br/> Customized Trips, tailored for you!</span>
+          <span class="headline-add">We provide you the only information you really need. <br/> Customized Trips, tailored for you!</span>
           <a href="/about/">Learn More</a>
         </div>
       </section>
@@ -68,7 +68,7 @@ import NavbarHeader  from "./components/Navbar.vue"
 .hero-text{
   width: 100%;
   background-image: url("./assets/hero_bg.jpg");
-  background-position: center;
+  background-position: bottom;
   background-size: 100% auto;
   height: 70vh;
 }
@@ -81,6 +81,8 @@ import NavbarHeader  from "./components/Navbar.vue"
   color: var(--tt);
   font-weight: bold;
   -webkit-text-stroke: 2px var(--tt-dark);
+  width: 100%;
+  text-align: center;
 }
 .hero .headline{
     color: var(--tt-dark);
@@ -153,4 +155,7 @@ footer {
   background-color: var(--tt-dark);
   color: var(--tt-light);
 }
+
+
+/* Bild von <a href="https://pixabay.com/de/users/bernhard_schuermann-20992548/?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=7269726">Bernhard Schürmann</a> auf <a href="https://pixabay.com/de//?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=7269726">Pixabay</a>*/
 </style>

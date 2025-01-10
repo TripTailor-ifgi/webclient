@@ -8,7 +8,8 @@ export default {
   <header class="header">
       <div class="brand">
         <a href="/">
-          <img class="logo" src="../assets/logo_pre_sketch.png"/>
+          <!--<img class="logo" src="../assets/logo_pre_sketch.png"/>-->
+          <img class="logo" src="@/assets/tripTailor_Logo.svg"/>
           <p>TripTailor</p>
         </a>
         
