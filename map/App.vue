@@ -210,7 +210,8 @@ export default {
   mounted() {
     this.initMap();
     this.fetchPOIs();
-    document.getElementById('create-route').addEventListener('click', this.createRoute);
+    // localStorage read for the Route data
+    console.log(JSON.parse(localStorage.getItem("tripTailorRoute")))
   },
 };
 </script>
