@@ -11,7 +11,7 @@ import { Toast } from "bootstrap"
 const lines = useLinesStore();
 const circle = ref(null);
 const boxes = reactive([
-  { label: 'Start', left: 50, top: 50, width: 100, height: 50, isEditing: false }, 
+  { label: 'Start', left: 50, top: 50, width: 150, height: 50, isEditing: false }, 
 ]);
 
 // Function to draw lines between the centroids of the boxes
@@ -103,7 +103,7 @@ const updatePositions = () => {
 
 
 const addBox = () => {
-  boxes.push({ label: '', left: 50, top: 50, width: 100, height: 50, isEditing: true });
+  boxes.push({ label: '', left: 50, top: 50, width: 150, height: 50, isEditing: true });
   nextTick(() => {
     updatePositions();
   });
