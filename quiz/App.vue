@@ -1,6 +1,6 @@
 <script setup>
-import NavbarHeader  from "@/components/Navbar.vue"
-import DraggableDiv  from "@/components/quiz/DraggableDiv.vue"
+import NavbarHeader from "@/components/Navbar.vue"
+import DraggableDiv from "@/components/quiz/DraggableDiv.vue"
 import DraggableLine from "@/components/quiz/DraggableLine.vue";
 import { ref, reactive, onMounted, nextTick } from 'vue';
 import { useLinesStore } from "@/stores/store.js"
@@ -8,99 +8,158 @@ import { Toast } from "bootstrap"
 
   const range = ref(3)
   const errmsg = ref()
-  const lines = useLinesStore()
-  const circle = ref(null);
-  const boxes = reactive([
-    { label: 'Start', left: '50%', top: '50%', isEditing: false },
-  ]);
+const lines = useLinesStore();
+const circle = ref(null);
+const boxes = reactive([
+  { label: 'Start', left: 50, top: 50, width: 100, height: 50, isEditing: false }, 
+]);
 
-  const drawLines = () => {
-    let boxElements = document.querySelector(".draggable-container")
-    let centerX = boxElements.offsetWidth/2
-    let centerY  = boxElements.offsetWidth/2
-    let tmpArray = [];
-    if(boxes.length>1){
-      for (let i = 0; i < boxes.length; i++) {
-        let box = boxes[i];
-        let nextbox = boxes[(i + 1) % (boxes.length)];
-        tmpArray.push({x1: parseFloat(box.left.slice(0, -2)) + centerX, y1: parseFloat(box.top.slice(0, -2)) + centerY, x2: parseFloat(nextbox.left.slice(0, -2)) + centerX, y2: parseFloat(nextbox.top.slice(0, -2)) + centerY})
-      }
-      lines.setLines(reactive(tmpArray))
+// Function to draw lines between the centroids of the boxes
+const drawLines = () => {
+  let tmpArray = [];
+
+  if (boxes.length > 1) {
+    for (let i = 0; i < boxes.length; i++) {
+      let box = boxes[i];
+      let nextbox = boxes[(i + 1) % boxes.length];
+
+      // Calculate centroids (center points) of each box
+      const boxCentroidX = box.left + box.width / 2;
+      const boxCentroidY = box.top + box.height / 2;
+      const nextboxCentroidX = nextbox.left + nextbox.width / 2;
+      const nextboxCentroidY = nextbox.top + nextbox.height / 2;
+
+      tmpArray.push({
+        x1: boxCentroidX,
+        y1: boxCentroidY,
+        x2: nextboxCentroidX,
+        y2: nextboxCentroidY
+      });
     }
-  };
+    lines.setLines(reactive(tmpArray));
+  }
+};
 
-  const updatePositions = () => {
-    if (!circle.value) return;
+// track dragging state for each box
+const draggingBox = ref(null);
+const startPosition = ref({ x: 0, y: 0 });
+const initialPosition = ref({ left: 0, top: 0 });
 
-    const centerX = circle.value.offsetWidth / 2;
-    const centerY = circle.value.offsetHeight / 2;
-    const angleStep = (2 * Math.PI) / boxes.length;
+// start dragging a box
+const startDragging = (box, event) => {
+  draggingBox.value = box;
+  startPosition.value = { x: event.clientX, y: event.clientY };
+  initialPosition.value = { left: box.left, top: box.top };
 
-    let radius = Math.max(300, 50 + boxes.length * 20);
+  // listen for drag movement
+  document.addEventListener('mousemove', onDrag);
+  document.addEventListener('mouseup', stopDragging);
+};
 
-    boxes.forEach((box, index) => {
-      const angle = index * angleStep;
-      box.left = `${(centerX + radius * Math.cos(angle))}px`;
-      box.top = `${(centerY + radius * Math.sin(angle))}px`;
-    });
-    drawLines();
-  };
+//handle dragging movement
+const onDrag = (event) => {
+  if (!draggingBox.value) return;
 
-  const addBox = () => {
-    boxes.push({ label: '', left: "50%", top: "50%", isEditing: true });
-    nextTick(updatePositions);
-  };
+  const dx = event.clientX - startPosition.value.x;
+  const dy = event.clientY - startPosition.value.y;
 
-  const finishEditing = (box) => {
-    box.isEditing = false;
-    nextTick(updatePositions);
-  };
+  draggingBox.value.left = initialPosition.value.left + dx;
+  draggingBox.value.top = initialPosition.value.top + dy;
 
-  onMounted(() => {
-    updatePositions();
+  // redraw lines during dragging 
+  drawLines();
+};
+
+// stop dragging
+const stopDragging = () => {
+  draggingBox.value = null;
+  document.removeEventListener('mousemove', onDrag);
+  document.removeEventListener('mouseup', stopDragging);
+
+  // Redraw lines only after dragging is complete, would be computationally cheaper
+  // drawLines();
+};
+
+// update positions in a circle, with the "Start" box on the leftmost side
+const updatePositions = () => {
+  if (!circle.value) return;
+
+  const centerX = circle.value.offsetWidth / 2;
+  const centerY = circle.value.offsetHeight / 2;
+  const angleStep = (2 * Math.PI) / boxes.length;
+
+  // Radius of the circle arrangement
+  const radius = Math.max(300, 50 + boxes.length * 20);
+
+  boxes.forEach((box, index) => {
+    const angle = (index * angleStep) - Math.PI;
+
+    box.left = centerX + radius * Math.cos(angle);
+    box.top = centerY + radius * Math.sin(angle);
   });
 
-  const setCookie = () => {
-    const toastTrigger = document.getElementById('startRouting')
-    const toastLiveExample = document.getElementById('liveToast')
-    
-    if(document.getElementById("date").value!==""){
-      let range = document.getElementById("range").value
-      let date = document.getElementById("date").value
-      let barrierFree = document.getElementById("barrierFree").checked
-      let vegan = document.getElementById("vegan").checked
+  drawLines();  // Update the lines after repositioning
+};
 
-      let options = {"range": range, "date": date, "barrierFree": barrierFree, "vegan": vegan}
 
-      let locations = []
-      for (let i = 0; i < boxes.length; i++) {
-        let label = boxes[[i]].label
-        if(label===''){
-          if (toastTrigger) {
-            const toastBootstrap = Toast.getOrCreateInstance(toastLiveExample)
-            errmsg.value="All locations need to be selected!"
-            toastBootstrap.show()
-          }
-          return -1;
+const addBox = () => {
+  boxes.push({ label: '', left: 50, top: 50, width: 100, height: 50, isEditing: true });
+  nextTick(() => {
+    updatePositions();
+  });
+};
+
+
+const finishEditing = (box) => {
+  box.isEditing = false;
+  nextTick(() => {
+    updatePositions();
+  })
+};
+
+const setCookie = () => {
+  const toastTrigger = document.getElementById('startRouting')
+  const toastLiveExample = document.getElementById('liveToast')
+  
+  if(document.getElementById("date").value!==""){
+    let range = document.getElementById("range").value
+    let date = document.getElementById("date").value
+    let barrierFree = document.getElementById("barrierFree").checked
+    let vegan = document.getElementById("vegan").checked
+
+    let options = {"range": range, "date": date, "barrierFree": barrierFree, "vegan": vegan}
+
+    let locations = []
+    for (let i = 0; i < boxes.length; i++) {
+      let label = boxes[[i]].label
+      if(label===''){
+        if (toastTrigger) {
+          const toastBootstrap = Toast.getOrCreateInstance(toastLiveExample)
+          errmsg.value="All locations need to be selected!"
+          toastBootstrap.show()
         }
-        locations.push(label)
+        return -1;
       }
-
-      localStorage.setItem("tripTailorRoute", JSON.stringify({"options":options,"locations":locations}));
-      window.location.replace("/map/");
-    }else{
-      if (toastTrigger) {
-        const toastBootstrap = Toast.getOrCreateInstance(toastLiveExample)
-        errmsg.value="Please select a date of travel"
-        toastBootstrap.show()
-      }
+      locations.push(label)
     }
 
+    localStorage.setItem("tripTailorRoute", JSON.stringify({"options":options,"locations":locations}));
+    window.location.replace("/map/");
+  }else{
+    if (toastTrigger) {
+      const toastBootstrap = Toast.getOrCreateInstance(toastLiveExample)
+      errmsg.value="Please select a date of travel"
+      toastBootstrap.show()
+    }
   }
+};
+
+onMounted(() => {
+  updatePositions();  // intial positioning and drawing of lines
+});
 </script>
 
 <template>
-
   <div class="quiz-container">
     <NavbarHeader/>
     
@@ -119,9 +178,16 @@ import { Toast } from "bootstrap"
             </div>
           </div>
         </div>
-        <DraggableDiv v-for="(box, index) in boxes" 
-        :key="index" :style="{ left: box.left, top: box.top }" :label="box.label">
-          <template v-slot:header> Activity {{ index }} </template>
+        <DraggableDiv
+          v-for="(box, index) in boxes" 
+          :key="index"
+          :style="{ left: box.left + 'px', top: box.top + 'px', width: box.width + 'px', height: box.height + 'px' }"
+          :label="box.label"
+          @mousedown="startDragging(box, $event)"
+        >
+          <template v-slot:header>
+            Activity {{ index }}
+          </template>
           <template v-slot:body>
             <select v-if="box.isEditing" v-model="box.label" @change="finishEditing(box)">
               <option disabled value="">Select activity</option>
@@ -132,8 +198,10 @@ import { Toast } from "bootstrap"
             </select>
           </template>
         </DraggableDiv>
-        <DraggableLine/>
+        <DraggableLine v-for="(line, index) in lines.lines" :key="index" :line="line" />
+        
       </div>
+
       <div class="sidebar">
         <div>
           <label for="date" class="form-label">Day of Travel</label>
@@ -159,7 +227,6 @@ import { Toast } from "bootstrap"
         <button class="plus" @click="addBox">Add location</button>
         <button class="start" @click="setCookie" id="startRouting">Start routing</button>
       </div>
-      
     </main>
   </div>
 </template>
@@ -180,12 +247,11 @@ hr{
   line-height: 1.6;
 }
 
-main{
+main {
   display: grid;
   grid-template-columns: 1fr 4fr;
   grid-template-rows: auto;
-  grid-template-areas: 
-    "sidebar circle";
+  grid-template-areas: "sidebar circle";
   align-items: center;
   justify-content: center;
   justify-items: center;
@@ -201,7 +267,8 @@ main{
   top: 0;
   left: 0;
 }
-.sidebar{
+
+.sidebar {
   grid-area: sidebar;
   display: flex;
   flex-direction: column;
@@ -209,6 +276,7 @@ main{
   height: 100%;
   align-items: center;
 }
+
 .plus, .start {
   padding: 10px 20px;
   border: none;
@@ -217,11 +285,12 @@ main{
   text-decoration: none;
 }
 
-.plus{
+.plus {
   background-color: var(--tt);
   color: var(--tt-dark);
 }
-.start{
+
+.start {
   background-color: var(--tt-dark);
   color: var(--tt);
 }
