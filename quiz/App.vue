@@ -171,6 +171,10 @@ import { Toast } from "bootstrap"
   box-sizing: border-box;
   font-family: Arial, sans-serif;
 }
+hr{
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
 .quiz-container {
   color: var(--tt-dark);
   line-height: 1.6;
