@@ -11,7 +11,7 @@ import { Toast } from "bootstrap"
 const lines = useLinesStore();
 const circle = ref(null);
 const boxes = reactive([
-  { label: 'Start', left: 50, top: 50, width: 150, height: 50, isEditing: false }, 
+  { label: 'Start', left: 50, top: 50, width: 150, height: 100, isEditing: false }, 
 ]);
 
 // Function to draw lines between the centroids of the boxes
@@ -103,7 +103,7 @@ const updatePositions = () => {
 
 
 const addBox = () => {
-  boxes.push({ label: '', left: 50, top: 50, width: 150, height: 50, isEditing: true });
+  boxes.push({ label: '', left: 50, top: 50, width: 150, height: 100, isEditing: true });
   nextTick(() => {
     updatePositions();
   });
@@ -120,38 +120,54 @@ const finishEditing = (box) => {
 const setCookie = () => {
   const toastTrigger = document.getElementById('startRouting')
   const toastLiveExample = document.getElementById('liveToast')
-  
-  if(document.getElementById("date").value!==""){
-    let range = document.getElementById("range").value
-    let date = document.getElementById("date").value
-    let barrierFree = document.getElementById("barrierFree").checked
-    let vegan = document.getElementById("vegan").checked
+  if(boxes.length>1){
+    if(document.getElementById("startLoc").value!==""){
+      if(document.getElementById("date").value!==""){
+        let range = document.getElementById("range").value
+        let date = document.getElementById("date").value
+        let barrierFree = document.getElementById("barrierFree").checked
+        let vegan = document.getElementById("vegan").checked
 
-    let options = {"range": range, "date": date, "barrierFree": barrierFree, "vegan": vegan}
+        let options = {"range": range, "date": date, "barrierFree": barrierFree, "vegan": vegan}
 
-    let locations = []
-    for (let i = 0; i < boxes.length; i++) {
-      let label = boxes[[i]].label
-      if(label===''){
+        let locations = []
+        for (let i = 0; i < boxes.length; i++) {
+          let label = boxes[[i]].label
+          if(label===''){
+            if (toastTrigger) {
+              const toastBootstrap = Toast.getOrCreateInstance(toastLiveExample)
+              errmsg.value="All locations need to be selected!"
+              toastBootstrap.show()
+            }
+            return -1;
+          }
+          locations.push(label)
+        }
+
+        localStorage.setItem("tripTailorRoute", JSON.stringify({"options":options,"locations":locations}));
+        window.location.replace("/map/");
+      }else{
         if (toastTrigger) {
           const toastBootstrap = Toast.getOrCreateInstance(toastLiveExample)
-          errmsg.value="All locations need to be selected!"
+          errmsg.value="Please select a date of travel"
           toastBootstrap.show()
         }
-        return -1;
       }
-      locations.push(label)
+    }else{
+      if (toastTrigger) {
+        const toastBootstrap = Toast.getOrCreateInstance(toastLiveExample)
+        errmsg.value="Please choose a starting point"
+        toastBootstrap.show()
+      }
     }
-
-    localStorage.setItem("tripTailorRoute", JSON.stringify({"options":options,"locations":locations}));
-    window.location.replace("/map/");
   }else{
     if (toastTrigger) {
       const toastBootstrap = Toast.getOrCreateInstance(toastLiveExample)
-      errmsg.value="Please select a date of travel"
+      errmsg.value="Please add at least one location"
       toastBootstrap.show()
     }
   }
+  
 };
 
 onMounted(() => {
@@ -190,22 +206,32 @@ onMounted(() => {
           </template>
           <template v-slot:body>
             <select v-if="box.isEditing" v-model="box.label" @change="finishEditing(box)">
-              <option disabled value="">Select activity</option>
-              <option value="Museum">Museum</option>
-              <option value="Cafe">Cafe</option>
+              <option disabled value="" selected>Select activity</option>
+              <option value="Attraction">Attraction</option>
+              <option value="Ameneties">Ameneties</option>
               <option value="Park">Park</option>
-              <option value="Restaurant">Restaurant</option>
+            </select>
+            <p v-if="!box.isEditing"> {{ box.label }} </p>
+            <select v-if="!box.isEditing && box.label!=='Start'">
+              <option disabled value="" selected>Select category</option>
+              <option v-if="box.label=='Attraction'" value="Museum">Museum</option>
+              <option v-if="box.label=='Attraction'" value="Sightseeing">Sightseeing</option>
+              <option v-if="box.label=='Ameneties'" value="Cafe">Cafe</option>
+              <option v-if="box.label=='Park'" value="Park">Park</option>
+              <option v-if="box.label=='Ameneties'" value="Restaurant">Restaurant</option>
             </select>
           </template>
         </DraggableDiv>
         <DraggableLine v-for="(line, index) in lines.lines" :key="index" :line="line" />
-        
       </div>
 
       <div class="sidebar">
         <div>
+          <label for="startLoc" class="form-label">Starting Point</label>
+          <input type="text" class="form-control" id="startLoc" name="start-location"/>
+          <hr>
           <label for="date" class="form-label">Day of Travel</label>
-          <input type="date" class="form-check" id="date" name="trip-start"/>
+          <input type="date" class="form-control" id="date" name="trip-start"/>
           <hr>
           <label for="range" class="form-label">Range from starting point: {{ range }} km</label>
           <input type="range" class="form-range custom-range" min="1" max="10" id="range" value="3" v-model="range" list="range-list">
@@ -275,6 +301,7 @@ main {
   justify-content: space-evenly;
   height: 100%;
   align-items: center;
+  padding: .5rem;
 }
 
 .plus, .start {
@@ -324,13 +351,13 @@ select {
 
 /* Range Slider CSS */
 .custom-range{
-  width: 90%;
+  width: 100%;
 }
 datalist {
   display: flex;
   justify-content: space-between;
   color: var(--tt-dark);
-  width: 90%;
+  width: 100%;
 }
 .custom-range::-webkit-slider-thumb{
   background: var(--tt-dark);

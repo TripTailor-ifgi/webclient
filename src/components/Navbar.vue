@@ -16,10 +16,10 @@ export default {
       </div>
       <nav>
         <ul>
-          <li><a href="/map/">About</a></li>
+          <li><a href="/map/">Map</a></li>
           <li><a href="/quiz/">Customizer</a></li>
           <li><a href="https://github.com/TipTailor" target="_blank">GitHub</a></li>
-          <li><a href="#">Log In</a></li>
+          <li><a href="#" class="disabled-a">Log In</a></li>
         </ul>
       </nav>
     </header>
@@ -65,5 +65,10 @@ export default {
   color: var(--tt-dark);
   text-decoration: none;
   font-size: 1rem;
+}
+.disabled-a {
+  color: gray !important;
+  cursor: default;
+  pointer-events: none;
 }
 </style>
