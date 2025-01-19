@@ -227,12 +227,15 @@ onMounted(() => {
 
       <div class="sidebar">
         <div>
+          <!-- Starting Point Input-->
           <label for="startLoc" class="form-label">Starting Point</label>
           <input type="text" class="form-control" id="startLoc" name="start-location"/>
           <hr>
+          <!-- Date of Travel Input-->
           <label for="date" class="form-label">Day of Travel</label>
           <input type="date" class="form-control" id="date" name="trip-start"/>
           <hr>
+          <!-- max Travel Range from Start Input-->
           <label for="range" class="form-label">Range from starting point: {{ range }} km</label>
           <input type="range" class="form-range custom-range" min="1" max="10" id="range" value="3" v-model="range" list="range-list">
           <datalist id="range-list">
@@ -240,6 +243,7 @@ onMounted(() => {
             <option value="100" label="10"></option>
           </datalist>
           <hr>
+          <!-- More Options Block-->
           <b>More Options</b>
           <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" role="switch" id="barrierFree">
@@ -250,6 +254,7 @@ onMounted(() => {
             <label class="form-check-label" for="vegan">Amenities should have a Vegan Option</label>
           </div>
         </div>
+        <!-- Buttons -->
         <button class="plus" @click="addBox">Add location</button>
         <button class="start" @click="setCookie" id="startRouting">Start routing</button>
       </div>
@@ -347,6 +352,11 @@ select {
 [type="checkbox"]:active{
   background-color: var(--tt-light);
   filter: unset;
+}
+
+.form-control:focus{
+  box-shadow: 0 0 0 0.25rem var(--tt-light);
+  border-color: var(--tt-dark);
 }
 
 /* Range Slider CSS */
