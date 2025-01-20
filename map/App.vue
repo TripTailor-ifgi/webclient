@@ -20,11 +20,79 @@ export default {
       poiVectorSource: new VectorSource(),
       routeVectorSource: new VectorSource(),
       poiList: [],
-      orsApiKey: '5b3ce3597851110001cf6248bb291358ecb148c487121422c1602b93',
+      orsApiKey: '5b3ce3597851110001cf6248bb291358ecb148c487121422c1602b93', // can we please use gitingore for this
       orsBaseUrl: 'https://api.openrouteservice.org/v2/directions/',
+      defaultRoutePoints: [
+        { name: "Custom Start", lon: 7.635, lat: 51.956 },
+        { name: "Custom End", lon: 7.595, lat: 51.969}
+      ]
     };
   },
   methods: {
+    // lazy addition of the wanted featuzre 'initial route on mapload'
+    async createInitialRoute() {
+      const body = JSON.stringify({
+        coordinates: this.defaultRoutePoints.map(({ lon, lat }) => [lon, lat]),
+        preference: 'shortest'
+      });
+
+      try {
+        const response = await fetch(this.orsBaseUrl + 'foot-walking', {
+          method: 'POST',
+          headers: {
+            Authorization: this.orsApiKey,
+            'Content-Type': 'application/json',
+          },
+          body,
+        });
+
+        if (!response.ok) {
+          console.error(`Initial route error: ${response.statusText}`);
+          return;
+        }
+
+        const routeData = await response.json();
+        const route = routeData.routes[0];
+        const routeGeometry = this.decodePolyline(route.geometry);
+
+        const routeFeature = new ol.Feature({
+          geometry: new LineString(routeGeometry),
+        });
+        this.routeVectorSource.addFeature(routeFeature);
+
+        // add markers for start and end points
+        this.defaultRoutePoints.forEach(point => {
+          const pointFeature = new ol.Feature({
+            geometry: new Point(fromLonLat([point.lon, point.lat])),
+            name: point.name
+          });
+          
+          this.poiVectorSource.addFeature(pointFeature);
+        });
+
+        // fit map to show the entire route
+        const routeExtent = routeFeature.getGeometry().getExtent();
+        this.map.getView().fit(routeExtent, { padding: [50, 50, 50, 50], duration: 1000 });
+
+        // display route details
+        const { distance, duration } = route.summary;
+        const distanceKm = (distance / 1000).toFixed(1);
+        const durationHours = Math.floor(duration / 3600);
+        const durationMinutes = Math.round((duration % 3600) / 60);
+
+        const routeDetailsDiv = document.getElementById('route-details');
+        if (routeDetailsDiv) {
+          routeDetailsDiv.innerHTML = `
+            <h3>Initial Route Details</h3>
+            <p><strong>Total Distance:</strong> ${distanceKm} km</p>
+            <p><strong>Total Duration:</strong> ${durationHours} hours ${durationMinutes} minutes</p>
+          `;
+        }
+      } catch (error) {
+        console.error(`Error creating initial route: ${error.message}`);
+      }
+    },
+
     initMap() {
       this.map = new ol.Map({
         target: 'map',
@@ -212,6 +280,7 @@ export default {
     this.fetchPOIs();
     // localStorage read for the Route data
     console.log(JSON.parse(localStorage.getItem("tripTailorRoute")))
+    this.createInitialRoute();
   },
 };
 </script>
