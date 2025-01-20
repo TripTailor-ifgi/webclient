@@ -20,8 +20,8 @@ export default {
       poiVectorSource: new VectorSource(),
       routeVectorSource: new VectorSource(),
       poiList: [],
-      orsApiKey: '5b3ce3597851110001cf6248bb291358ecb148c487121422c1602b93', // can we please use gitingore for this
-      orsBaseUrl: 'https://api.openrouteservice.org/v2/directions/',
+      orsApiKey: import.meta.env.VITE_ORS_KEY, // can we please use gitingore for this
+      orsBaseUrl: import.meta.env.VITE_ORS_URL,
       defaultRoutePoints: [
         { name: "Custom Start", lon: 7.635, lat: 51.956 },
         { name: "Custom End", lon: 7.595, lat: 51.969}
