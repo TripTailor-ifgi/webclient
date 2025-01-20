@@ -8,11 +8,11 @@ import { Toast } from "bootstrap"
 
   const range = ref(3)
   const errmsg = ref()
-const lines = useLinesStore();
-const circle = ref(null);
-const boxes = reactive([
-  { label: 'Start', left: 50, top: 50, width: 150, height: 100, isEditing: false }, 
-]);
+  const lines = useLinesStore();
+  const circle = ref(null);
+  const boxes = reactive([
+    { label: 'Start', left: 50, top: 50, width: 150, height: 100, isEditing: false, subcat: '' }, 
+  ]);
 
 // Function to draw lines between the centroids of the boxes
 const drawLines = () => {
@@ -128,12 +128,14 @@ const setCookie = () => {
         let barrierFree = document.getElementById("barrierFree").checked
         let vegan = document.getElementById("vegan").checked
 
-        let options = {"range": range, "date": date, "barrierFree": barrierFree, "vegan": vegan}
+        let options = {"range": range, "date": date, "barrierFree": barrierFree, "vegan": vegan, "startLocation": {"name": "Hauptbahnhof","coords": {"lat": 51.95695904285895,"lon": 7.634940032616667}}}
 
         let locations = []
         for (let i = 0; i < boxes.length; i++) {
           let label = boxes[[i]].label
-          if(label===''){
+          let subcat = boxes[[i]].subcat
+          console.log(boxes)
+          if(label==='' || (label!=='Start' && subcat==='')){
             if (toastTrigger) {
               const toastBootstrap = Toast.getOrCreateInstance(toastLiveExample)
               errmsg.value="All locations need to be selected!"
@@ -141,7 +143,7 @@ const setCookie = () => {
             }
             return -1;
           }
-          locations.push(label)
+          locations.push({"top":label,"sub":subcat})
         }
 
         localStorage.setItem("tripTailorRoute", JSON.stringify({"options":options,"locations":locations}));
@@ -199,6 +201,7 @@ onMounted(() => {
           :key="index"
           :style="{ left: box.left + 'px', top: box.top + 'px', width: box.width + 'px', height: box.height + 'px' }"
           :label="box.label"
+          :subcat="box.subcat"
           @mousedown="startDragging(box, $event)"
         >
           <template v-slot:header>
@@ -212,7 +215,7 @@ onMounted(() => {
               <option value="Park">Park</option>
             </select>
             <p v-if="!box.isEditing"> {{ box.label }} </p>
-            <select v-if="!box.isEditing && box.label!=='Start'">
+            <select v-if="!box.isEditing && box.label!=='Start'" v-model="box.subcat">
               <option disabled value="" selected>Select category</option>
               <option v-if="box.label=='Attraction'" value="Museum">Museum</option>
               <option v-if="box.label=='Attraction'" value="Sightseeing">Sightseeing</option>

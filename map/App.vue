@@ -11,6 +11,8 @@ import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
 import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
 import { LineString, Point } from 'ol/geom';
+import { ref} from 'vue';
+const loading = ref(false)
 
 export default {
   name: 'App',
@@ -68,6 +70,28 @@ export default {
     },
     async fetchPOIs() {
       // Clear existing markers
+      loading.value=true;
+      let cookieData = JSON.parse(localStorage.getItem("tripTailorRoute"))
+      console.log(JSON.stringify(cookieData))
+      let baseURL = "http://127.0.0.1:5001"
+
+      try {
+        const res = await fetch(`${baseURL}/api/pois`, {
+          method: "POST",
+          body: JSON.stringify(cookieData),
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          mode: "no-cors",
+        },)
+        console.log(res)
+      }catch(e){
+        console.log(e)
+        loading.value=false;
+        return -1
+      }
+
       this.poiVectorSource.clear();
       this.poiList = [];
       document.getElementById('poi-list').innerHTML = '';
@@ -106,6 +130,7 @@ export default {
       } catch (error) {
         this.displayError(`Error fetching POIs: ${error.message}`);
       }
+      loading.value=false;
     },
     async createRoute() {
       // Clear previous route
@@ -232,8 +257,14 @@ export default {
         <div id="poi-list" class="poi-list"></div>
       </div>
     </div>
+    {{ console.log(loading) }}
     <div class="map-container">
-      
+      <div class="loading" v-if="loading">
+        <div class="spinner-border">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+
+      </div>
       <div id="map" class="map"></div>
       <div id="route-details" class="route-details">
         <!-- Route details will be dynamically populated here -->
@@ -254,6 +285,20 @@ export default {
 .route-planning-container {
   color: var(--tt-dark);
   line-height: 1.6;
+  position: relative;
+}
+.loading{
+  position: absolute;
+  top: calc( 3rem + 40px );
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1500;
+  background: rgba(92, 92, 92, 0.373);
+  width: 100%;
+  height: 600px; 
+  margin-bottom: 20px;
 }
 
 .map-controls {
@@ -281,6 +326,9 @@ export default {
 }
 
 .map {
+  position: relative;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 600px; 
   border-radius: 8px;
