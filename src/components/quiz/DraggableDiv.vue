@@ -2,7 +2,6 @@
     <div ref="draggableContainer" class="draggable-container" @mousedown="dragMouseDown">
       <header>
         <slot name="header">Random Activity</slot>
-        <i class="bi bi-x-circle"></i>
       </header>
       <slot name="body">{{ label }}</slot>
     </div>

@@ -80,7 +80,7 @@ export default {
           method: "POST",
           body: JSON.stringify(cookieData),
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type": "text/plain",
             "Accept": "application/json",
           },
           mode: "no-cors",

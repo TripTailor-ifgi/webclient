@@ -11,7 +11,7 @@ import { Toast } from "bootstrap"
   const lines = useLinesStore();
   const circle = ref(null);
   const boxes = reactive([
-    { label: 'Start', left: 50, top: 50, width: 150, height: 100, isEditing: false, subcat: '' }, 
+    { label: 'Start', left: 50, top: 50, width: 150, height: 100, isEditing: false, isSubCat:false, subcat: '' }, 
   ]);
 
 // Function to draw lines between the centroids of the boxes
@@ -103,7 +103,24 @@ const updatePositions = () => {
 
 
 const addBox = () => {
-  boxes.push({ label: '', left: 50, top: 50, width: 150, height: 100, isEditing: true });
+  boxes.push({ label: '', left: 50, top: 50, width: 150, height: 100, isEditing: true,isSubCat:false, subcat:'' });
+  nextTick(() => {
+    updatePositions();
+  });
+};
+
+/**
+ * Deletes a box from the customizer
+ * @param box proxy object of the selected box
+ */
+const deleteBox = (box) => {
+  let tmpArr = boxes.slice()
+  boxes.splice(0)
+  for (let i = 0; i < tmpArr.length; i++) {
+    if(!(tmpArr[i].top===box.top && tmpArr[i].label===box.label && tmpArr[i].left===box.left)){
+      boxes.push(tmpArr[i])
+    }
+  }
   nextTick(() => {
     updatePositions();
   });
@@ -112,11 +129,22 @@ const addBox = () => {
 
 const finishEditing = (box) => {
   box.isEditing = false;
+  box.isSubCat = true;
   nextTick(() => {
     updatePositions();
   })
 };
 
+const finishSubCat = (box) => {
+  box.isSubCat = false;
+  nextTick(() => {
+    updatePositions();
+  })
+};
+
+/**
+ * Set a local Storage data object to give selected information to the map application
+ */
 const setCookie = () => {
   const toastTrigger = document.getElementById('startRouting')
   const toastLiveExample = document.getElementById('liveToast')
@@ -205,24 +233,31 @@ onMounted(() => {
           @mousedown="startDragging(box, $event)"
         >
           <template v-slot:header>
-            Activity {{ index }}
+            <b v-if="index!==0">Activity {{ index }}</b>
+            <b v-if="index==0"></b>
+            <i v-if="index!==0" @click="deleteBox(box)" class="bi bi-x-circle delete-icon"></i>
           </template>
           <template v-slot:body>
             <select v-if="box.isEditing" v-model="box.label" @change="finishEditing(box)">
               <option disabled value="" selected>Select activity</option>
-              <option value="Attraction">Attraction</option>
-              <option value="Ameneties">Ameneties</option>
-              <option value="Park">Park</option>
+              <option value="Tourism">Tourism</option>
+              <option value="Amenity">Amenity</option>
             </select>
             <p v-if="!box.isEditing"> {{ box.label }} </p>
-            <select v-if="!box.isEditing && box.label!=='Start'" v-model="box.subcat">
+            <select v-if="box.isSubCat && box.label!=='Start'" v-model="box.subcat" @change="finishSubCat(box)">
               <option disabled value="" selected>Select category</option>
-              <option v-if="box.label=='Attraction'" value="Museum">Museum</option>
-              <option v-if="box.label=='Attraction'" value="Sightseeing">Sightseeing</option>
-              <option v-if="box.label=='Ameneties'" value="Cafe">Cafe</option>
-              <option v-if="box.label=='Park'" value="Park">Park</option>
-              <option v-if="box.label=='Ameneties'" value="Restaurant">Restaurant</option>
+              <option v-if="box.label=='Tourism'" value="museum">Museum</option>
+              <option v-if="box.label=='Tourism'" value="attraction">Attraction</option>
+              <option v-if="box.label=='Tourism'" value="gallery">Gallery</option>
+              <option v-if="box.label=='Tourism'" value="zoo">Zoo</option>
+              <option v-if="box.label=='Tourism'" value="park">Park</option>
+              <option v-if="box.label=='Amenity'" value="cafe">Cafe</option>
+              <option v-if="box.label=='Amenity'" value="bar">Bar</option>
+              <option v-if="box.label=='Amenity'" value="ice_cream">Ice Cafe</option>
+              <option v-if="box.label=='Amenity'" value="fast_food">Fast Food</option>
+              <option v-if="box.label=='Amenity'" value="restaurant">Restaurant</option>
             </select>
+            <p v-if="!box.isSubCat && !box.isEditing && box.label!=='Start'"> {{ box.subcat }} </p>
           </template>
         </DraggableDiv>
         <DraggableLine v-for="(line, index) in lines.lines" :key="index" :line="line" />
@@ -328,6 +363,10 @@ main {
 .start {
   background-color: var(--tt-dark);
   color: var(--tt);
+}
+
+.delete-icon{
+  cursor: pointer;
 }
 
 select {
