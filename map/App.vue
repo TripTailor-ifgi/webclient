@@ -9,6 +9,7 @@ import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
+import axios from 'axios'
 import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
 import { LineString, Point } from 'ol/geom';
 import { ref} from 'vue';
@@ -22,8 +23,8 @@ export default {
       poiVectorSource: new VectorSource(),
       routeVectorSource: new VectorSource(),
       poiList: [],
-      orsApiKey: '5b3ce3597851110001cf6248bb291358ecb148c487121422c1602b93',
-      orsBaseUrl: 'https://api.openrouteservice.org/v2/directions/',
+      orsApiKey: import.meta.env.VITE_ORS_KEY,
+      orsBaseUrl: import.meta.env.VITE_ORS_URL,
     };
   },
   methods: {
@@ -39,8 +40,8 @@ export default {
             style: new Style({
               image: new CircleStyle({
                 radius: 6,
-                fill: new Fill({ color: 'blue' }),
-                stroke: new Stroke({ color: 'white', width: 2 }),
+                fill: new Fill({ color: '#f2aa02' }),
+                stroke: new Stroke({ color: '#291d00', width: 2 }),
               }),
             }),
           }),
@@ -73,63 +74,55 @@ export default {
       loading.value=true;
       let cookieData = JSON.parse(localStorage.getItem("tripTailorRoute"))
       console.log(JSON.stringify(cookieData))
-      let baseURL = "http://127.0.0.1:5001"
-
-      try {
-        const res = await fetch(`${baseURL}/api/pois`, {
-          method: "POST",
-          body: JSON.stringify(cookieData),
+      
+      
+        axios({
+          method: 'post',
+          url: `${import.meta.env.VITE_API_BASE_URL}/api/pois`,
           headers: {
-            "Content-Type": "text/plain",
-            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Accept": "*/*"
           },
-          mode: "no-cors",
-        },)
-        console.log(res)
-      }catch(e){
-        console.log(e)
-        loading.value=false;
-        return -1
-      }
+          data: JSON.stringify(cookieData),
+        })
+        .then((response) => {
+          let data = response.data;
+          try{
+            const uniquePOIs = new Map();
+            let tourism = data.all_results[0].results
+            let pois = tourism.concat(data.all_results[1].results )
+
+            for (let i = 0; i < pois.length; i++) {
+              let poi = pois[i]
+
+              const poiFeature = new ol.Feature({
+                geometry: new Point(fromLonLat(JSON.parse(poi.geometry).coordinates)),
+                name: poi.name,
+                //type: tags.tourism,
+              });
+
+              this.poiVectorSource.addFeature(poiFeature);
+              //this.poiList.push({ name: tags.name, lat, lon, type: tags.tourism });
+
+              //const poiItem = document.createElement('div');
+              //poiItem.innerHTML = `<label><input type="checkbox" data-index="${this.poiList.length - 1}"> ${tags.name} (${tags.tourism})</label>`;
+              //document.getElementById('poi-list').appendChild(poiItem);
+
+              uniquePOIs.set(poi.name, true);
+              
+            }
+          }catch(e){
+            console.log(e)
+          }
+        }, (error) => {
+          console.log(error);
+          return -1
+        });
 
       this.poiVectorSource.clear();
       this.poiList = [];
       document.getElementById('poi-list').innerHTML = '';
 
-      const query = `
-        [out:json];
-        (node["tourism"~"museum|attraction|viewpoint"](around:10000, 51.9607, 7.6261););
-        out body;
-      `;
-
-      try {
-        const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
-        const data = await response.json();
-
-        if (!data.elements?.length) return this.displayError('No POIs found in this area.');
-
-        const uniquePOIs = new Map();
-        data.elements.forEach(({ tags, lat, lon }) => {
-          if (!tags?.name || uniquePOIs.has(tags.name)) return;
-
-          const poiFeature = new ol.Feature({
-            geometry: new Point(fromLonLat([lon, lat])),
-            name: tags.name,
-            type: tags.tourism,
-          });
-
-          this.poiVectorSource.addFeature(poiFeature);
-          this.poiList.push({ name: tags.name, lat, lon, type: tags.tourism });
-
-          const poiItem = document.createElement('div');
-          poiItem.innerHTML = `<label><input type="checkbox" data-index="${this.poiList.length - 1}"> ${tags.name} (${tags.tourism})</label>`;
-          document.getElementById('poi-list').appendChild(poiItem);
-
-          uniquePOIs.set(tags.name, true);
-        });
-      } catch (error) {
-        this.displayError(`Error fetching POIs: ${error.message}`);
-      }
       loading.value=false;
     },
     async createRoute() {

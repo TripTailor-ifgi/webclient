@@ -162,7 +162,6 @@ const setCookie = () => {
         for (let i = 0; i < boxes.length; i++) {
           let label = boxes[[i]].label
           let subcat = boxes[[i]].subcat
-          console.log(boxes)
           if(label==='' || (label!=='Start' && subcat==='')){
             if (toastTrigger) {
               const toastBootstrap = Toast.getOrCreateInstance(toastLiveExample)
@@ -171,7 +170,7 @@ const setCookie = () => {
             }
             return -1;
           }
-          locations.push({"top":label,"sub":subcat})
+          locations.push({"top":label.toLowerCase(),"sub":subcat.toLowerCase().replace(" ", "_")})
         }
 
         localStorage.setItem("tripTailorRoute", JSON.stringify({"options":options,"locations":locations}));
@@ -246,16 +245,16 @@ onMounted(() => {
             <p v-if="!box.isEditing"> {{ box.label }} </p>
             <select v-if="box.isSubCat && box.label!=='Start'" v-model="box.subcat" @change="finishSubCat(box)">
               <option disabled value="" selected>Select category</option>
-              <option v-if="box.label=='Tourism'" value="museum">Museum</option>
-              <option v-if="box.label=='Tourism'" value="attraction">Attraction</option>
-              <option v-if="box.label=='Tourism'" value="gallery">Gallery</option>
-              <option v-if="box.label=='Tourism'" value="zoo">Zoo</option>
-              <option v-if="box.label=='Tourism'" value="park">Park</option>
-              <option v-if="box.label=='Amenity'" value="cafe">Cafe</option>
-              <option v-if="box.label=='Amenity'" value="bar">Bar</option>
-              <option v-if="box.label=='Amenity'" value="ice_cream">Ice Cafe</option>
-              <option v-if="box.label=='Amenity'" value="fast_food">Fast Food</option>
-              <option v-if="box.label=='Amenity'" value="restaurant">Restaurant</option>
+              <option v-if="box.label=='Tourism'" value="Museum">Museum</option>
+              <option v-if="box.label=='Tourism'" value="Attraction">Attraction</option>
+              <option v-if="box.label=='Tourism'" value="Gallery">Gallery</option>
+              <option v-if="box.label=='Tourism'" value="Zoo">Zoo</option>
+              <option v-if="box.label=='Tourism'" value="Park">Park</option>
+              <option v-if="box.label=='Amenity'" value="Cafe">Cafe</option>
+              <option v-if="box.label=='Amenity'" value="Bar">Bar</option>
+              <option v-if="box.label=='Amenity'" value="Ice Cream">Ice Cream</option>
+              <option v-if="box.label=='Amenity'" value="Fast Food">Fast Food</option>
+              <option v-if="box.label=='Amenity'" value="Restaurant">Restaurant</option>
             </select>
             <p v-if="!box.isSubCat && !box.isEditing && box.label!=='Start'"> {{ box.subcat }} </p>
           </template>
