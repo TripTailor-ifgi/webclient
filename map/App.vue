@@ -93,9 +93,15 @@ export default {
         // Selecting and formatting data from response
         let data = response.data;
         const uniquePOIs = new Map();
-        let tourism = data.all_results[0].results
-        let pois = tourism.concat(data.all_results[1].results )
-
+        let pois = []
+        for (let i = 0; i < data.all_results.length; i++) {
+          let results = data.all_results[i].results
+          for (let j = 0; j < results.length; j++) {
+            results[j].type=data.all_results[i].location_type
+          }
+          pois = pois.concat(results) 
+        }
+        console.log(pois)
         //  Generating point features on map
         for (let i = 0; i < pois.length; i++) {
           let poi = pois[i]
@@ -103,7 +109,7 @@ export default {
           const poiFeature = new ol.Feature({
             geometry: new Point(fromLonLat(JSON.parse(poi.geometry).coordinates)),
             name: poi.name,
-            //type: tags.tourism,
+            type: poi.type,
           });
 
           this.poiVectorSource.addFeature(poiFeature);
