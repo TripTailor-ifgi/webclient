@@ -14,6 +14,37 @@ import { Toast } from "bootstrap"
     { label: 'Start', left: 50, top: 50, width: 150, height: 100, isEditing: false, isSubCat:false, subcat: '' }, 
   ]);
 
+// Location Geocoding
+const startLocation = ref({ name: "", coords: { lat: null, lon: null } });
+
+const geocodeStartLocation = async (event) => {
+  const query = event.target.value;
+
+  if (!query) return;
+
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`
+    );
+    const data = await response.json();
+
+    if (data && data.length > 0) {
+      const { lat, lon, display_name } = data[0];
+      startLocation.value = {
+        name: display_name,
+        coords: { lat: parseFloat(lat), lon: parseFloat(lon) },
+      };
+    } else {
+      console.error("No results found for the starting location.");
+      startLocation.value = { name: "", coords: { lat: null, lon: null } };
+    }
+  } catch (error) {
+    console.error("Geocoding failed:", error);
+    startLocation.value = { name: "", coords: { lat: null, lon: null } };
+  }
+};
+
+
 // Function to draw lines between the centroids of the boxes
 const drawLines = () => {
   let tmpArray = [];
@@ -156,7 +187,13 @@ const setCookie = () => {
         let barrierFree = document.getElementById("barrierFree").checked
         let vegan = document.getElementById("vegan").checked
 
-        let options = {"range": range, "date": date, "barrierFree": barrierFree, "vegan": vegan, "startLocation": {"name": "Hauptbahnhof","coords": {"lat": 51.95695904285895,"lon": 7.634940032616667}}}
+        let options = {
+            range: range,
+            date: date,
+            barrierFree: barrierFree,
+            vegan: vegan,
+            startLocation: startLocation.value,
+          };
 
         let locations = []
         for (let i = 0; i < boxes.length; i++) {
@@ -266,7 +303,14 @@ onMounted(() => {
         <div>
           <!-- Starting Point Input-->
           <label for="startLoc" class="form-label">Starting Point</label>
-          <input type="text" class="form-control" id="startLoc" name="start-location"/>
+          <input
+            type="text"
+            class="form-control"
+            id="startLoc"
+            name="start-location"
+            placeholder="e.g., Münster Hauptbahnhof" 
+            @change="geocodeStartLocation"
+          />
           <hr>
           <!-- Date of Travel Input-->
           <label for="date" class="form-label">Day of Travel</label>
