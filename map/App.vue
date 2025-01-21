@@ -158,7 +158,6 @@ export default {
         coordinates: locations,
         preference: 'shortest'
       });
-      console.log(body)
       // Sending the Request to the ORS
       axios({
         method: 'post',
@@ -301,8 +300,6 @@ export default {
   mounted() {
     this.initMap();
     this.fetchPOIs();
-    // localStorage read for the Route data
-    console.log(JSON.parse(localStorage.getItem("tripTailorRoute")))
   },
 };
 </script>
@@ -323,7 +320,6 @@ export default {
         <div id="poi-list" class="poi-list"></div>
       </div>
     </div>
-    {{ console.log(loading) }}
     <div class="map-container">
       <div class="loading" v-if="loading">
         <div class="spinner-border">
