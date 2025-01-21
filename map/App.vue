@@ -11,7 +11,7 @@ import TileLayer from 'ol/layer/Tile';
 import { Icon } from 'ol/style';
 import OSM from 'ol/source/OSM';
 import axios from 'axios'
-import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
+import { Stroke, Style } from 'ol/style';// import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
 import { LineString, Point } from 'ol/geom';
 import { ref} from 'vue';
 const loading = ref(false)
@@ -112,37 +112,37 @@ export default {
           let iconUrl = '';
           switch (poi.type) {
             case 'tourism_attraction':
-              iconUrl = '../../src/assets/Park.svg'; 
+              iconUrl = '../../src/assets/icons/Attraction.svg'; 
               break;
             case 'tourism_museum':
-              iconUrl =  '@/assets/Museum.svg';
+              iconUrl =  '../../src/assets/icons/Museum.svg';
               break;
             case 'tourism_gallery':
-              iconUrl = '../../src/assets/Bus.svg';
+              iconUrl = '../../src/assets/icons/Gallery.svg';
               break;
             case 'tourism_zoo':
-              iconUrl = '@/assets/Museum.svg';
+              iconUrl = '../../src/assets/icons/Zoo.svg';
               break;
             case 'tourism_park':
-              iconUrl = '@/src/assets/Museum.svg';
+              iconUrl = '../../src/assets/icons/Park.svg';
               break;
             case 'amenity_ice_cream':
-              iconUrl = '@/src/assets/Bus.svg';
+              iconUrl = '../../src/assets/icons/Icecream.svg';
               break;
             case 'amenity_fast_food':
-              iconUrl = '../../src/assets/Bus.svg';
+              iconUrl = '../../src/assets/icons/Fastfood.svg';
               break;
             case 'amenity_cafe':
-              iconUrl = '../../src/assets/Bus.svg';
+              iconUrl = '../../src/assets/icons/Cafe.svg';
               break;
             case 'amenity_bar':
-              iconUrl = '../../src/assets/Bus.svg';
+              iconUrl = '../../src/assets/icons/Bar.svg';
               break;
             case 'amenity_restaurant':
-              iconUrl = '../../src/assets/Bus.svg';
+              iconUrl = '../../src/assets/icons/Restaurant.svg';
               break;
             default:
-              iconUrl = '../../src/assets/Park.svg'; // defualt icon
+              iconUrl = '../../src/assets/icons/Default.svg'; // defualt icon
           }
           const poiFeature = new ol.Feature({
             geometry: new Point(fromLonLat(JSON.parse(poi.geometry).coordinates)),
