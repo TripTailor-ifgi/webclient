@@ -8,6 +8,7 @@ import { fromLonLat } from 'ol/proj';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
 import TileLayer from 'ol/layer/Tile';
+import { Icon } from 'ol/style';
 import OSM from 'ol/source/OSM';
 import axios from 'axios'
 import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
@@ -37,13 +38,15 @@ export default {
           }),
           new VectorLayer({
             source: this.poiVectorSource,
-            style: new Style({
-              image: new CircleStyle({
-                radius: 6,
-                fill: new Fill({ color: '#f2aa02' }),
-                stroke: new Stroke({ color: '#291d00', width: 2 }),
-              }),
-            }),
+            style: function(feature) {
+              const iconUrl = feature.get('iconUrl'); 
+              return new Style({
+                image: new Icon({
+                  src: iconUrl, 
+                  size: [32, 32], 
+                }),
+              });
+            },
           }),
           new VectorLayer({
             source: this.routeVectorSource,
@@ -106,10 +109,46 @@ export default {
         for (let i = 0; i < pois.length; i++) {
           let poi = pois[i]
 
+          let iconUrl = '';
+          switch (poi.type) {
+            case 'tourism_attraction':
+              iconUrl = '../../src/assets/Park.svg'; 
+              break;
+            case 'tourism_museum':
+              iconUrl =  '@/assets/Museum.svg';
+              break;
+            case 'tourism_gallery':
+              iconUrl = '../../src/assets/Bus.svg';
+              break;
+            case 'tourism_zoo':
+              iconUrl = '@/assets/Museum.svg';
+              break;
+            case 'tourism_park':
+              iconUrl = '@/src/assets/Museum.svg';
+              break;
+            case 'amenity_ice_cream':
+              iconUrl = '@/src/assets/Bus.svg';
+              break;
+            case 'amenity_fast_food':
+              iconUrl = '../../src/assets/Bus.svg';
+              break;
+            case 'amenity_cafe':
+              iconUrl = '../../src/assets/Bus.svg';
+              break;
+            case 'amenity_bar':
+              iconUrl = '../../src/assets/Bus.svg';
+              break;
+            case 'amenity_restaurant':
+              iconUrl = '../../src/assets/Bus.svg';
+              break;
+            default:
+              iconUrl = '../../src/assets/Park.svg'; // defualt icon
+          }
           const poiFeature = new ol.Feature({
             geometry: new Point(fromLonLat(JSON.parse(poi.geometry).coordinates)),
             name: poi.name,
             type: poi.type,
+            iconUrl: iconUrl, // save icon URL for later use
           });
 
           this.poiVectorSource.addFeature(poiFeature);
