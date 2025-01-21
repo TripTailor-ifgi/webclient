@@ -49,7 +49,7 @@ export default {
             source: this.routeVectorSource,
             style: new Style({
               stroke: new Stroke({
-                color: 'blue',
+                color: '#291d00',
                 width: 5,
                 lineDash: [10, 10],
               }),
@@ -69,61 +69,128 @@ export default {
       document.body.appendChild(errorDiv);
       setTimeout(() => errorDiv.remove(), 5000);
     },
+    /**
+     * Fetching the POIs from the API according to the filters from the customizer / localStorage
+     */
     async fetchPOIs() {
       // Clear existing markers
       loading.value=true;
+
+      // load data from localStorage
       let cookieData = JSON.parse(localStorage.getItem("tripTailorRoute"))
-      console.log(JSON.stringify(cookieData))
       
-      
-        axios({
-          method: 'post',
-          url: `${import.meta.env.VITE_API_BASE_URL}/api/pois`,
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "*/*"
-          },
-          data: JSON.stringify(cookieData),
-        })
-        .then((response) => {
-          let data = response.data;
-          try{
-            const uniquePOIs = new Map();
-            let tourism = data.all_results[0].results
-            let pois = tourism.concat(data.all_results[1].results )
+      // Fetching POIs from API
+      axios({
+        method: 'post',
+        url: `${import.meta.env.VITE_API_BASE_URL}/api/pois`,
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "*/*"
+        },
+        data: JSON.stringify(cookieData),
+      })
+      .then((response) => {
+        // Selecting and formatting data from response
+        let data = response.data;
+        const uniquePOIs = new Map();
+        let tourism = data.all_results[0].results
+        let pois = tourism.concat(data.all_results[1].results )
 
-            for (let i = 0; i < pois.length; i++) {
-              let poi = pois[i]
+        //  Generating point features on map
+        for (let i = 0; i < pois.length; i++) {
+          let poi = pois[i]
 
-              const poiFeature = new ol.Feature({
-                geometry: new Point(fromLonLat(JSON.parse(poi.geometry).coordinates)),
-                name: poi.name,
-                //type: tags.tourism,
-              });
+          const poiFeature = new ol.Feature({
+            geometry: new Point(fromLonLat(JSON.parse(poi.geometry).coordinates)),
+            name: poi.name,
+            //type: tags.tourism,
+          });
 
-              this.poiVectorSource.addFeature(poiFeature);
-              //this.poiList.push({ name: tags.name, lat, lon, type: tags.tourism });
+          this.poiVectorSource.addFeature(poiFeature);
+          //this.poiList.push({ name: tags.name, lat, lon, type: tags.tourism });
 
-              //const poiItem = document.createElement('div');
-              //poiItem.innerHTML = `<label><input type="checkbox" data-index="${this.poiList.length - 1}"> ${tags.name} (${tags.tourism})</label>`;
-              //document.getElementById('poi-list').appendChild(poiItem);
+          //const poiItem = document.createElement('div');
+          //poiItem.innerHTML = `<label><input type="checkbox" data-index="${this.poiList.length - 1}"> ${tags.name} (${tags.tourism})</label>`;
+          //document.getElementById('poi-list').appendChild(poiItem);
 
-              uniquePOIs.set(poi.name, true);
-              
-            }
-          }catch(e){
-            console.log(e)
-          }
-        }, (error) => {
-          console.log(error);
-          return -1
-        });
+          uniquePOIs.set(poi.name, true);
+        }
+        
+        // Formatting data for the initial route
+        let locationCoords = []
+        let startCoords = [cookieData.options.startLocation.coords.lon, cookieData.options.startLocation.coords.lat]
+        let routeLoc = data.closest_results
+
+        locationCoords.push(startCoords)
+        for (let i = 0; i < routeLoc.length; i++) {
+          let geom = JSON.parse(routeLoc[i].results[0].geometry)
+          locationCoords.push(geom.coordinates)
+        }
+        locationCoords.push(startCoords)
+
+        // Calling initial route creation
+        this.createInitialRoute(locationCoords);
+      })
+      .catch((e)=> {
+        console.log(e)
+      })
 
       this.poiVectorSource.clear();
       this.poiList = [];
       document.getElementById('poi-list').innerHTML = '';
 
+      // disabling loading screen
       loading.value=false;
+    },
+    /**
+     * Sends a request to the OpenRouteService API to generate a first route for the user
+     * @param locations Array of coordinate pairs of the initial results for the first route
+     */
+    async createInitialRoute(locations) {
+      // Generating the body for the request
+      const body = JSON.stringify({
+        coordinates: locations,
+        preference: 'shortest'
+      });
+      console.log(body)
+      // Sending the Request to the ORS
+      axios({
+        method: 'post',
+        url: `${this.orsBaseUrl}foot-walking`,
+        headers: {
+          Authorization: this.orsApiKey,
+          'Content-Type': 'application/json',
+        },
+        data: body,
+      })
+      .then((response) => {
+        const route = response.data.routes[0];
+        const routeGeometry = this.decodePolyline(route.geometry);
+
+        const routeFeature = new ol.Feature({
+          geometry: new LineString(routeGeometry),
+        });
+        this.routeVectorSource.addFeature(routeFeature);
+
+        // fit map to show the entire route
+        const routeExtent = routeFeature.getGeometry().getExtent();
+        this.map.getView().fit(routeExtent, { padding: [50, 50, 50, 50], duration: 1000 });
+
+        // display route details
+        const { distance, duration } = route.summary;
+        const distanceKm = (distance / 1000).toFixed(1);
+        const durationHours = Math.floor(duration / 3600);
+        const durationMinutes = Math.round((duration % 3600) / 60);
+
+        const routeDetailsDiv = document.getElementById('route-details');
+        if (routeDetailsDiv) {
+          routeDetailsDiv.innerHTML = `
+            <h3>Initial Route Details</h3>
+            <p><strong>Total Distance:</strong> ${distanceKm} km</p>
+            <p><strong>Total Duration:</strong> ${durationHours} hours ${durationMinutes} minutes</p>
+          `;
+        }
+      }).catch((e) => console.log(e))
     },
     async createRoute() {
       // Clear previous route
