@@ -11,7 +11,7 @@ import TileLayer from 'ol/layer/Tile';
 import { Icon } from 'ol/style';
 import OSM from 'ol/source/OSM';
 import axios from 'axios'
-import { Stroke, Style } from 'ol/style';// import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
+import { Stroke, Style } from 'ol/style';
 import { LineString, Point } from 'ol/geom';
 import { ref} from 'vue';
 const loading = ref(false)
@@ -29,7 +29,23 @@ export default {
     };
   },
   methods: {
+    
+    /**
+    * initialize the map and add the necessary layers and controls
+    */
+
     initMap() {
+      const container = document.getElementById('popup');
+      const content = document.getElementById('popup-content');
+      const closer = document.getElementById('popup-closer');
+
+      // overlay for the popup
+      const overlay = new ol.Overlay({
+        element: container,
+        autoPan: true,
+        autoPanAnimation: { duration: 250 },
+      });
+
       this.map = new ol.Map({
         target: 'map',
         layers: [
@@ -38,12 +54,12 @@ export default {
           }),
           new VectorLayer({
             source: this.poiVectorSource,
-            style: function(feature) {
-              const iconUrl = feature.get('iconUrl'); 
+            style: function (feature) {
+              const iconUrl = feature.get('iconUrl');
               return new Style({
                 image: new Icon({
-                  src: iconUrl, 
-                  size: [32, 32], 
+                  src: iconUrl,
+                  size: [32, 32],
                 }),
               });
             },
@@ -59,10 +75,58 @@ export default {
             }),
           }),
         ],
+        overlays: [overlay],
         view: new ol.View({
           center: fromLonLat([7.6261, 51.9607]),
           zoom: 13,
         }),
+      });
+
+      // close popup
+      closer.onclick = () => {
+        overlay.setPosition(undefined);
+        closer.blur();
+        return false;
+      };
+
+      this.map.on('click', (evt) => {
+        const feature = this.map.forEachFeatureAtPixel(evt.pixel, (feat) => feat);
+        if (feature) {
+          console.log('clicked feature:', feature);
+          console.log('feature properties:', {
+            name: feature.get('name'),
+            address: feature.get('address'),
+            opening_hours: feature.get('opening_hours'),
+            iconUrl: feature.get('iconUrl'), // log the icon URL
+          });
+
+          const coordinates = feature.getGeometry().getCoordinates();
+
+          // build the popup content dynamically
+          // based on the feature properties
+          let info = `<div>`;
+          const iconUrl = feature.get('iconUrl');
+          if (iconUrl) {
+            info += `<img src="${iconUrl}" alt="${feature.get('name')} icon" style="width: 24px; height: 24px; margin-right: 8px; vertical-align: middle;">`;
+          }
+          info += `<strong>${feature.get('name')}</strong></div>`;
+
+          const address = feature.get('address');
+          if (address) {
+            info += `<p><strong>Address:</strong> ${address}</p>`;
+          }
+
+          const openingHours = feature.get('opening_hours');
+          if (openingHours) {
+            info += `<p><strong>Opening Hours:</strong> ${openingHours}</p>`;
+          }
+
+          content.innerHTML = info;
+          overlay.setPosition(coordinates);
+          } else {
+            overlay.setPosition(undefined);
+            closer.blur();
+          }
       });
     },
     displayError(message) {
@@ -148,8 +212,12 @@ export default {
             geometry: new Point(fromLonLat(JSON.parse(poi.geometry).coordinates)),
             name: poi.name,
             type: poi.type,
-            iconUrl: iconUrl, // save icon URL for later use
+            iconUrl: iconUrl,
+            address: poi.address || poi.properties?.address,
+            opening_hours: poi.opening_hours || poi.properties?.opening_hours,
           });
+          console.log('Created POI feature:', poiFeature);
+
 
           this.poiVectorSource.addFeature(poiFeature);
           //this.poiList.push({ name: tags.name, lat, lon, type: tags.tourism });
@@ -364,15 +432,22 @@ export default {
         <div class="spinner-border">
           <span class="visually-hidden">Loading...</span>
         </div>
-
       </div>
       <div id="map" class="map"></div>
+
+      <!-- Popup for POI details -->
+      <div id="popup" class="ol-popup">
+        <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+        <div id="popup-content"></div>
+      </div>
+
       <div id="route-details" class="route-details">
         <!-- Route details will be dynamically populated here -->
       </div>
     </div>
   </div>
 </template>
+
 
 
 
@@ -489,6 +564,27 @@ export default {
   padding: 15px;
   border-radius: 5px;
   z-index: 2000;
+}
+
+.ol-popup {
+  position: absolute;
+  background-color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  min-width: 200px;
+  z-index: 1001;
+  transform: translate(-50%, -100%);
+}
+
+.ol-popup-closer {
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  font-size: 16px;
+  color: #aaa;
+  cursor: pointer;
 }
 
 </style>
