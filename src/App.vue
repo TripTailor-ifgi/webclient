@@ -1,5 +1,6 @@
 <script setup>
 import NavbarHeader  from "./components/Navbar.vue"
+import FooterComponent  from "./components/Footer.vue"
 </script>
 
 <template>
@@ -33,9 +34,7 @@ import NavbarHeader  from "./components/Navbar.vue"
     </main>
 
     <!-- Footer -->
-    <footer>
-      <p>Footer Content</p>
-    </footer>
+    <FooterComponent/>
   </div>
 </template>
 
@@ -147,15 +146,6 @@ main {
   color: var(--tt-dark);
   height: 40vh;
 }
-
-/* Footer */
-footer {
-  text-align: center;
-  padding: 10px;
-  background-color: var(--tt-dark);
-  color: var(--tt-light);
-}
-
 
 /* Bild von <a href="https://pixabay.com/de/users/bernhard_schuermann-20992548/?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=7269726">Bernhard Schürmann</a> auf <a href="https://pixabay.com/de//?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=7269726">Pixabay</a>*/
 </style>

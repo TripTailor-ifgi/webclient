@@ -210,7 +210,6 @@ onMounted(() => {
     
     <main>
       <div class="circle-container" ref="circle">
-        <!--<canvas ref="connectionCanvas"></canvas>-->
         <!-- Error Toast -->
         <div class="toast-container position-fixed top-0 end-0 p-3">
           <div id="liveToast" class="toast text-bg-danger" role="alert" aria-live="assertive" aria-atomic="true">

@@ -1,5 +1,6 @@
 <script setup>
   import NavbarHeader  from "@/components/Navbar.vue"
+  import FooterComponent  from "@/components/Footer.vue"
 </script>
 <script>
 import 'ol/ol.css';
@@ -7,14 +8,17 @@ import * as ol from 'ol';
 import { fromLonLat } from 'ol/proj';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
-import TileLayer from 'ol/layer/Tile';
+import ImageWMS from 'ol/source/ImageWMS.js';
 import { Icon } from 'ol/style';
-import OSM from 'ol/source/OSM';
+import {Image as ImageLayer} from 'ol/layer.js';
 import axios from 'axios'
 import { Stroke, Style } from 'ol/style';
 import { LineString, Point } from 'ol/geom';
 import { ref} from 'vue';
+import { Toast } from "bootstrap"
+
 const loading = ref(false)
+const errmsg = ref()
 
 export default {
   name: 'App',
@@ -49,8 +53,11 @@ export default {
       this.map = new ol.Map({
         target: 'map',
         layers: [
-          new TileLayer({
-            source: new OSM(),
+          new ImageLayer({
+            source: new ImageWMS({
+              url: 'https://sgx.geodatenzentrum.de/wms_basemapde?Version=1.3.0',
+              params: {'LAYERS': 'de_basemapde_web_raster_farbe'}
+            }),
           }),
           new VectorLayer({
             source: this.poiVectorSource,
@@ -130,11 +137,11 @@ export default {
       });
     },
     displayError(message) {
-      const errorDiv = document.createElement('div');
-      errorDiv.className = 'error-message';
-      errorDiv.textContent = message;
-      document.body.appendChild(errorDiv);
-      setTimeout(() => errorDiv.remove(), 5000);
+      const toastLiveExample = document.getElementById('liveToast')
+      const toastBootstrap = Toast.getOrCreateInstance(toastLiveExample)
+      console.log(toastLiveExample)
+      errmsg.value = message
+      toastBootstrap.show()
     },
     /**
      * Fetching the POIs from the API according to the filters from the customizer / localStorage
@@ -168,7 +175,6 @@ export default {
           }
           pois = pois.concat(results) 
         }
-        console.log(pois)
         //  Generating point features on map
         for (let i = 0; i < pois.length; i++) {
           let poi = pois[i]
@@ -216,8 +222,6 @@ export default {
             address: poi.address || poi.properties?.address,
             opening_hours: poi.opening_hours || poi.properties?.opening_hours,
           });
-          console.log('Created POI feature:', poiFeature);
-
 
           this.poiVectorSource.addFeature(poiFeature);
           //this.poiList.push({ name: tags.name, lat, lon, type: tags.tourism });
@@ -414,17 +418,17 @@ export default {
 
 <template>
   <div class="route-planning-container">
-    <NavbarHeader/>
-    <div class="map-controls">
-      <div id="poi-selector" class="control-panel">
-        <h3>Select POIs for Route</h3>
-        <select id="transport-mode">
-          <option value="foot-walking">Walking</option>
-          <option value="driving-car">Driving</option>
-          <option value="cycling-regular">Cycling</option>
-        </select>
-        <button id="create-route" class="create-route-btn">Create Route</button>
-        <div id="poi-list" class="poi-list"></div>
+    <NavbarHeader class="fit-width"/>
+    <!-- Error Toast -->
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+      <div id="liveToast" class="toast text-bg-danger" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+          <strong class="me-auto">Error</strong>
+          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+          {{ errmsg }}
+        </div>
       </div>
     </div>
     <div class="map-container">
@@ -440,11 +444,26 @@ export default {
         <a href="#" id="popup-closer" class="ol-popup-closer"></a>
         <div id="popup-content"></div>
       </div>
+    </div>
+    <div class="info-container">
+      <div class="transport-mode-container ">
+        <h4 class="tt-text">Mode of transportation</h4>
+        <div class="btn-group transport-mode-group" role="group" aria-label="Transportaion Mode Button Group" @change="createRoute">
+          <input type="radio" class="btn-check" name="transport-mode" value="foot-walking" id="btnradio1" autocomplete="off" checked>
+          <label class="btn btn-outline-primary" for="btnradio1"><i class="bi bi-person-walking"></i></label>
 
+          <input type="radio" class="btn-check" name="transport-mode" value="cycling-regular" id="btnradio2" autocomplete="off">
+          <label class="btn btn-outline-primary" for="btnradio2"><i class="bi bi-bicycle"></i></label>
+
+          <input type="radio" class="btn-check" name="transport-mode" value="driving-car" id="btnradio3" autocomplete="off">
+          <label class="btn btn-outline-primary" for="btnradio3"><i class="bi bi-car-front-fill"></i></label>
+        </div>
+      </div>
       <div id="route-details" class="route-details">
         <!-- Route details will be dynamically populated here -->
       </div>
     </div>
+    <FooterComponent class="fit-width"/>
   </div>
 </template>
 
@@ -458,11 +477,15 @@ export default {
   box-sizing: border-box;
   font-family: Arial, sans-serif;
 }
+.tt-text{
+  color: var(--tt-dark);
+}
 .route-planning-container {
   color: var(--tt-dark);
   line-height: 1.6;
   position: relative;
 }
+
 .loading{
   position: absolute;
   top: calc( 3rem + 40px );
@@ -475,25 +498,37 @@ export default {
   width: 100%;
   height: 600px; 
   margin-bottom: 20px;
-}
-
-.map-controls {
-  position: fixed; /* 固定在右侧 */
-  top: 30px;
-  right: 30px;
-  z-index: 1000;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  padding: 15px;
-  margin-bottom: 10px;
-  max-width: 300px;
-  width: 100%;
+  display: none;
 }
 
 .control-panel {
   padding: 15px;
   margin-bottom: 10px;
+}
+
+/* Style for the Transport mode selector */
+.transport-mode-container {
+  background: var(--tt-gray);
+  padding: 1rem;
+  width: 100%;
+  height: 7rem;
+}
+.transport-mode-group{
+  width: 100%;
+}
+.btn-check + .btn{
+  color: var(--tt-dark);
+  border-color: var(--tt-dark);
+}
+.btn-check:hover + .btn, .btn-check:active + .btn, .btn-check:focus + .btn{
+  border-color: var(--tt-dark);
+  background-color: var(--tt-light);
+  color: var(--tt-dark);
+}
+.btn-check:checked + .btn{
+  background-color: var(--tt) !important;
+  border-color: var(--tt-dark);
+  color: var(--tt-dark);
 }
 
 .map-container {
@@ -506,20 +541,25 @@ export default {
   top: 0;
   left: 0;
   width: 100%;
-  height: 600px; 
+  height: 100%; 
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
   margin-bottom: 20px;
+}
+
+.info-container {
+  flex: 1; 
+  width: 100%;
+  height: 100%;
 }
 
 .route-details {
   flex: 1; 
   width: 100%;
   background: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  padding: 20px;
-  margin-top: 20px;
+  padding: 15px;
+  height: calc( 100% - 7rem);
+  overflow-y: scroll;
 }
 
 .route-details h3 {
@@ -585,6 +625,26 @@ export default {
   font-size: 16px;
   color: #aaa;
   cursor: pointer;
+}
+
+@media only screen and (min-width: 950px) {
+.route-planning-container {
+  display:grid;
+  grid-template-columns: 4fr 1fr;
+}
+.map-container {
+  flex: 1; 
+  grid-column: 1;
+  height:95vh;
+}
+.info-container{
+  grid-column: 2;
+  margin: 0;
+}
+.fit-width{
+  grid-column: 1/3;
+}
+
 }
 
 </style>
