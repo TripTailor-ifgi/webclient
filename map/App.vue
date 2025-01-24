@@ -11,7 +11,7 @@ import TileLayer from 'ol/layer/Tile';
 import { Icon } from 'ol/style';
 import OSM from 'ol/source/OSM';
 import axios from 'axios'
-import { Stroke, Style } from 'ol/style';
+import { Circle, Fill, Stroke, Style } from 'ol/style';
 import { LineString, Point } from 'ol/geom';
 import { ref} from 'vue';
 const loading = ref(false)
@@ -27,52 +27,6 @@ export default {
       selectedPOIs: [],
       orsApiKey: import.meta.env.VITE_ORS_KEY,
       orsBaseUrl: import.meta.env.VITE_ORS_URL,
-      iconPaths: { 
-        tourism_attraction: {
-          withBuffer: '../../src/assets/icons/Attraction_withBuffer.svg',
-          normal: '../../src/assets/icons/Attraction.svg',
-        },
-        tourism_museum: {
-          withBuffer: '../../src/assets/icons/Museum_withBuffer.svg',
-          normal: '../../src/assets/icons/Museum.svg',
-        },
-        tourism_gallery: {
-          withBuffer: '../../src/assets/icons/Gallery_withBuffer.svg',
-          normal: '../../src/assets/icons/Gallery.svg',
-        },
-        tourism_zoo: {
-          withBuffer: '../../src/assets/icons/Zoo_withBuffer.svg',
-          normal: '../../src/assets/icons/Zoo.svg',
-        },
-        tourism_park: {
-          withBuffer: '../../src/assets/icons/Park_withBuffer.svg',
-          normal: '../../src/assets/icons/Park.svg',
-        },
-        amenity_ice_cream: {
-          withBuffer: '../../src/assets/icons/Icecream_withBuffer.svg',
-          normal: '../../src/assets/icons/Icecream.svg',
-        },
-        amenity_fast_food: {
-          withBuffer: '../../src/assets/icons/Fastfood_withBuffer.svg',
-          normal: '../../src/assets/icons/Fastfood.svg',
-        },
-        amenity_cafe: {
-          withBuffer: '../../src/assets/icons/Cafe_withBuffer.svg',
-          normal: '../../src/assets/icons/Cafe.svg',
-        },
-        amenity_bar: {
-          withBuffer: '../../src/assets/icons/Bar_withBuffer.svg',
-          normal: '../../src/assets/icons/Bar.svg',
-        },
-        amenity_restaurant: {
-          withBuffer: '../../src/assets/icons/Restaurant_withBuffer.svg',
-          normal: '../../src/assets/icons/Restaurant.svg',
-        },
-        default: {
-          withBuffer: '../../src/assets/icons/Default_withBuffer.svg',
-          normal: '../../src/assets/icons/Default.svg',
-        },
-      },
     };
   },
   methods: {
@@ -103,12 +57,29 @@ export default {
             source: this.poiVectorSource,
             style: (feature) => {
               const iconUrl = feature.get('iconUrl');
-              return new Style({
-                image: new Icon({
-                  src: iconUrl,
-                  size: [32, 32],
+              const isInRoute = this.selectedPOIs.some(
+                (poi) => poi.name === feature.get('name')
+              );
+
+              return [
+                new Style({
+                  image: new Circle({
+                    radius: 15, // Size of the circle
+                    fill: new Fill({ 
+                      color: isInRoute ? '#f2aa02' : '#feecc2'// deeper if in route, lighter if not
+                    }),
+                    stroke: new Stroke({ color: '#00000', width: 2 }), // balck border
+                  }),
                 }),
-              });
+                new Style({
+                  image: new Icon({
+                    src: iconUrl,
+                    size: [32, 32], // Size of the icon
+                    anchor: [0.5, 0.5], // Center the icon on the circle
+                    displacement: [7.5, -6]
+                  }),
+                }),
+              ];
             },
           }),
           new VectorLayer({
@@ -230,9 +201,10 @@ export default {
     /**
      * Fetching the POIs from the API according to the filters from the customizer / localStorage
      */
-    async fetchPOIs() {
+     async fetchPOIs() {
       loading.value = true;
-      let cookieData = JSON.parse(localStorage.getItem("tripTailorRoute"));
+      let cookieData = JSON.parse(localStorage.getItem("tripTailorRoute"))
+      
 
       axios({
         method: 'post',
@@ -244,78 +216,118 @@ export default {
         data: JSON.stringify(cookieData),
       })
       .then((response) => {
+
         let data = response.data;
-        let pois = [];
+
+        let pois = []
         for (let i = 0; i < data.all_results.length; i++) {
-          let results = data.all_results[i].results;
+          let results = data.all_results[i].results
           for (let j = 0; j < results.length; j++) {
-            results[j].type = data.all_results[i].location_type;
+            results[j].type=data.all_results[i].location_type
           }
-          pois = pois.concat(results);
+          pois = pois.concat(results) 
         }
         console.log('fetched pois:', pois);
-
-        // Clear existing markers
+          
+        // clear existing markers
         this.poiVectorSource.clear();
         this.poiList = [];
 
-        // Generating point features on map
+        //  Generating point features on map
         for (let i = 0; i < pois.length; i++) {
-          let poi = pois[i];
-          const iconType = this.iconPaths[poi.type] || this.iconPaths.default;
-
-          // Determine if the POI is in the initial route
-          const isInRoute = this.selectedPOIs.some(p => p.name === poi.name);
-
+          let poi = pois[i]
+          let iconUrl = '';
+          switch (poi.type) {
+            case 'tourism_attraction':
+              iconUrl = '../../src/assets/icons/Attraction.svg'; 
+              break;
+            case 'tourism_museum':
+              iconUrl =  '../../src/assets/icons/Museum.svg';
+              break;
+            case 'tourism_gallery':
+              iconUrl = '../../src/assets/icons/Gallery.svg';
+              break;
+            case 'tourism_zoo':
+              iconUrl = '../../src/assets/icons/Zoo.svg';
+              break;
+            case 'tourism_park':
+              iconUrl = '../../src/assets/icons/Park.svg';
+              break;
+            case 'amenity_ice_cream':
+              iconUrl = '../../src/assets/icons/Icecream.svg';
+              break;
+            case 'amenity_fast_food':
+              iconUrl = '../../src/assets/icons/Fastfood.svg';
+              break;
+            case 'amenity_cafe':
+              iconUrl = '../../src/assets/icons/Cafe.svg';
+              break;
+            case 'amenity_bar':
+              iconUrl = '../../src/assets/icons/Bar.svg';
+              break;
+            case 'amenity_restaurant':
+              iconUrl = '../../src/assets/icons/Restaurant.svg';
+              break;
+            default:
+              iconUrl = '../../src/assets/icons/Default.svg'; // defualt icon
+          }
           const poiFeature = new ol.Feature({
             geometry: new Point(fromLonLat(JSON.parse(poi.geometry).coordinates)),
             name: poi.name,
             type: poi.type,
-            iconUrl: isInRoute ? iconType.withBuffer : iconType.normal,
+            iconUrl: iconUrl,
             address: poi.address || poi.properties?.address,
             opening_hours: poi.opening_hours || poi.properties?.opening_hours,
           });
 
           this.poiVectorSource.addFeature(poiFeature);
+
+          //this.poiList.push({ name: tags.name, lat, lon, type: tags.tourism });
+
+          //const poiItem = document.createElement('div');
+          //poiItem.innerHTML = `<label><input type="checkbox" data-index="${this.poiList.length - 1}"> ${tags.name} (${tags.tourism})</label>`;
+          //document.getElementById('poi-list').appendChild(poiItem);
+
+          //uniquePOIs.set(poi.name, true);
           this.poiList.push(poi);
         }
-
+        
         // Formatting data for the initial route
-        let locationCoords = [];
-        let startCoords = [cookieData.options.startLocation.coords.lon, cookieData.options.startLocation.coords.lat];
-        let routeLoc = data.closest_results;
+        let locationCoords = []
+        let startCoords = [cookieData.options.startLocation.coords.lon, cookieData.options.startLocation.coords.lat]
+        let routeLoc = data.closest_results
 
         console.log('route locations:', routeLoc);
 
-        locationCoords.push(startCoords);
-
+        locationCoords.push(startCoords)
         
-        // Correctly populate selectedPOIs
-        this.selectedPOIs = routeLoc.flatMap(loc => {
+        // correctly populate selectedPOIs
+        this.selectedPOIs = routeLoc.map(loc => {
           const geom = JSON.parse(loc.results[0].geometry);
-          return pois.filter(poi =>
+          const matchingPoi = pois.find(poi => 
             JSON.parse(poi.geometry).coordinates.toString() === geom.coordinates.toString()
           );
-        });
+          return matchingPoi;
+        }).filter(Boolean);
 
         console.log('selected POIs:', this.selectedPOIs);
 
         for (let i = 0; i < routeLoc.length; i++) {
-          let geom = JSON.parse(routeLoc[i].results[0].geometry);
-          locationCoords.push(geom.coordinates);
+          let geom = JSON.parse(routeLoc[i].results[0].geometry)
+          locationCoords.push(geom.coordinates)
         }
-        locationCoords.push(startCoords);
+        locationCoords.push(startCoords)
 
         // Calling initial route creation
         this.createInitialRoute(locationCoords);
       })
-      .catch((e) => {
-        console.error('Error fetching POIs:', e);
+      .catch((e)=> {
+        console.error('Error fetching POIs:', e)
       })
       .finally(() => {
-        // Disabling loading screen
+        // disabling loading screen
         loading.value = false;
-      });
+      })
     },
 
     /*
@@ -344,68 +356,62 @@ export default {
     },
     async updateRoute() {
       console.log('Updating route with POIs:', this.selectedPOIs);
-
+      
       if (this.selectedPOIs.length < 2) {
         this.displayError('At least two POIs are required to calculate a route.');
         return;
       }
-
-      // Generate coordinates from selected POIs
+      
+      // generate coordinates from selected POIs
       const coordinates = this.selectedPOIs.map((poi) =>
         JSON.parse(poi.geometry).coordinates
       );
-
-      // Close loop (return to the starting point)
+      
+      // close loop (return to the starting point)
       const startCoords = JSON.parse(localStorage.getItem("tripTailorRoute")).options.startLocation.coords;
       coordinates.push([startCoords.lon, startCoords.lat]);
-
+      
       const body = JSON.stringify({
         coordinates,
         preference: 'shortest',
       });
-
+      
       try {
+        // send request to ORS API, still only foot walking?
         const response = await axios.post(`${this.orsBaseUrl}foot-walking`, body, {
           headers: {
             Authorization: this.orsApiKey,
             'Content-Type': 'application/json',
           },
         });
-
+        
         if (response.status !== 200) {
           throw new Error('Failed to update the route');
         }
-
+        
         const route = response.data.routes[0];
         const routeGeometry = this.decodePolyline(route.geometry);
-
-        // Update the route layer
+        
+        // update the route layer
         this.routeVectorSource.clear();
         const routeFeature = new ol.Feature({
           geometry: new LineString(routeGeometry),
         });
         this.routeVectorSource.addFeature(routeFeature);
-
-        // Adjust the map view to fit the new route
+        
+        // adjust the map view to fit the new route
         const routeExtent = routeFeature.getGeometry().getExtent();
         this.map.getView().fit(routeExtent, {
           padding: [50, 50, 50, 50],
           duration: 1000,
         });
-
-        // Update POI icons based on the new route
-        this.poiVectorSource.getFeatures().forEach(feature => {
-          const isInRoute = this.selectedPOIs.some(p => p.name === feature.get('name'));
-          const iconType = this.iconPaths[feature.get('type')] || this.iconPaths.default;
-          feature.set('iconUrl', isInRoute ? iconType.withBuffer : iconType.normal);
-        });
-
-        // Display updated route details
+        
+        // display updated route details
         const { distance, duration } = route.summary;
         const distanceKm = (distance / 1000).toFixed(1);
         const durationHours = Math.floor(duration / 3600);
         const durationMinutes = Math.round((duration % 3600) / 60);
-
+        
         const routeDetailsDiv = document.getElementById('route-details') || document.createElement('div');
         routeDetailsDiv.id = 'route-details';
         routeDetailsDiv.innerHTML = `
@@ -413,7 +419,7 @@ export default {
           <p><strong>Total Distance:</strong> ${distanceKm} km</p>
           <p><strong>Total Duration:</strong> ${durationHours} hours ${durationMinutes} minutes</p>
         `;
-
+        
         if (!document.getElementById('route-details')) {
           document.body.appendChild(routeDetailsDiv);
         }
@@ -468,8 +474,6 @@ export default {
             <p><strong>Total Duration:</strong> ${durationHours} hours ${durationMinutes} minutes</p>
           `;
         }
-        // Update POI icons based on the new route
-        this.updateRoute(); // Ensure POI icons are updated
       }).catch((e) => console.log(e))
     },
     async createRoute() {
