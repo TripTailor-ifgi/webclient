@@ -24,6 +24,7 @@ export default {
       poiVectorSource: new VectorSource(),
       routeVectorSource: new VectorSource(),
       poiList: [],
+      selectedPOIs: [],
       orsApiKey: import.meta.env.VITE_ORS_KEY,
       orsBaseUrl: import.meta.env.VITE_ORS_URL,
     };
@@ -54,7 +55,7 @@ export default {
           }),
           new VectorLayer({
             source: this.poiVectorSource,
-            style: function (feature) {
+            style: (feature) => {
               const iconUrl = feature.get('iconUrl');
               return new Style({
                 image: new Icon({
@@ -93,23 +94,39 @@ export default {
         const feature = this.map.forEachFeatureAtPixel(evt.pixel, (feat) => feat);
         if (feature) {
           console.log('clicked feature:', feature);
-          console.log('feature properties:', {
+          
+          const featureProps = {
             name: feature.get('name'),
             address: feature.get('address'),
             opening_hours: feature.get('opening_hours'),
-            iconUrl: feature.get('iconUrl'), // log the icon URL
-          });
+            iconUrl: feature.get('iconUrl')
+          };
+          console.log('feature properties:', featureProps);
 
           const coordinates = feature.getGeometry().getCoordinates();
+          
 
-          // build the popup content dynamically
-          // based on the feature properties
           let info = `<div>`;
+
           const iconUrl = feature.get('iconUrl');
           if (iconUrl) {
             info += `<img src="${iconUrl}" alt="${feature.get('name')} icon" style="width: 24px; height: 24px; margin-right: 8px; vertical-align: middle;">`;
           }
-          info += `<strong>${feature.get('name')}</strong></div>`;
+
+          const isInRoute = this.selectedPOIs.some(
+            (poi) => poi.name === feature.get('name')
+          );
+
+          info += `<strong>${feature.get('name')}</strong>`;
+          info += `<button
+            id="toggle-poi"
+            data-name="${feature.get('name')}"
+            style="margin-top: 10px; padding: 5px 10px; cursor: pointer; background: ${
+              isInRoute ? '#f44336' : '#4CAF50'
+            }; color: white; border: none; border-radius: 4px;">
+            ${isInRoute ? 'Remove from Route' : 'Add to Route'}
+          </button>`;
+          info += `</div>`;
 
           const address = feature.get('address');
           if (address) {
@@ -123,10 +140,38 @@ export default {
 
           content.innerHTML = info;
           overlay.setPosition(coordinates);
-          } else {
-            overlay.setPosition(undefined);
-            closer.blur();
+
+          // add event listener for the toggle button
+          const toggleButton = document.getElementById('toggle-poi');
+          if (toggleButton) {
+            toggleButton.addEventListener('click', () => {
+              const poiName = toggleButton.getAttribute('data-name');
+              const poi = this.poiList.find(p => p.name === poiName);
+
+              if (poi) {
+                const isInRoute = this.selectedPOIs.some(p => p.name === poiName);
+                
+                if (isInRoute) {
+                  // remove POI from route
+                  this.selectedPOIs = this.selectedPOIs.filter(p => p.name !== poiName);
+                  toggleButton.textContent = 'Add to Route';
+                  toggleButton.style.backgroundColor = '#4CAF50';
+                } else {
+                  // add POI to route
+                  this.selectedPOIs.push(poi);
+                  toggleButton.textContent = 'Remove from Route';
+                  toggleButton.style.backgroundColor = '#f44336';
+                }
+
+                // update route with new selected POIs
+                this.updateRoute();
+              }
+            });
           }
+        } else {
+          overlay.setPosition(undefined);
+          closer.blur();
+        }
       });
     },
     displayError(message) {
@@ -139,14 +184,11 @@ export default {
     /**
      * Fetching the POIs from the API according to the filters from the customizer / localStorage
      */
-    async fetchPOIs() {
-      // Clear existing markers
-      loading.value=true;
-
-      // load data from localStorage
+     async fetchPOIs() {
+      loading.value = true;
       let cookieData = JSON.parse(localStorage.getItem("tripTailorRoute"))
       
-      // Fetching POIs from API
+
       axios({
         method: 'post',
         url: `${import.meta.env.VITE_API_BASE_URL}/api/pois`,
@@ -157,9 +199,9 @@ export default {
         data: JSON.stringify(cookieData),
       })
       .then((response) => {
-        // Selecting and formatting data from response
+
         let data = response.data;
-        const uniquePOIs = new Map();
+
         let pois = []
         for (let i = 0; i < data.all_results.length; i++) {
           let results = data.all_results[i].results
@@ -168,11 +210,15 @@ export default {
           }
           pois = pois.concat(results) 
         }
-        console.log(pois)
+        console.log('fetched pois:', pois);
+          
+        // clear existing markers
+        this.poiVectorSource.clear();
+        this.poiList = [];
+
         //  Generating point features on map
         for (let i = 0; i < pois.length; i++) {
           let poi = pois[i]
-
           let iconUrl = '';
           switch (poi.type) {
             case 'tourism_attraction':
@@ -216,17 +262,17 @@ export default {
             address: poi.address || poi.properties?.address,
             opening_hours: poi.opening_hours || poi.properties?.opening_hours,
           });
-          console.log('Created POI feature:', poiFeature);
-
 
           this.poiVectorSource.addFeature(poiFeature);
+
           //this.poiList.push({ name: tags.name, lat, lon, type: tags.tourism });
 
           //const poiItem = document.createElement('div');
           //poiItem.innerHTML = `<label><input type="checkbox" data-index="${this.poiList.length - 1}"> ${tags.name} (${tags.tourism})</label>`;
           //document.getElementById('poi-list').appendChild(poiItem);
 
-          uniquePOIs.set(poi.name, true);
+          //uniquePOIs.set(poi.name, true);
+          this.poiList.push(poi);
         }
         
         // Formatting data for the initial route
@@ -234,7 +280,21 @@ export default {
         let startCoords = [cookieData.options.startLocation.coords.lon, cookieData.options.startLocation.coords.lat]
         let routeLoc = data.closest_results
 
+        console.log('route locations:', routeLoc);
+
         locationCoords.push(startCoords)
+        
+        // correctly populate selectedPOIs
+        this.selectedPOIs = routeLoc.map(loc => {
+          const geom = JSON.parse(loc.results[0].geometry);
+          const matchingPoi = pois.find(poi => 
+            JSON.parse(poi.geometry).coordinates.toString() === geom.coordinates.toString()
+          );
+          return matchingPoi;
+        }).filter(Boolean);
+
+        console.log('selected POIs:', this.selectedPOIs);
+
         for (let i = 0; i < routeLoc.length; i++) {
           let geom = JSON.parse(routeLoc[i].results[0].geometry)
           locationCoords.push(geom.coordinates)
@@ -245,15 +305,110 @@ export default {
         this.createInitialRoute(locationCoords);
       })
       .catch((e)=> {
-        console.log(e)
+        console.error('Error fetching POIs:', e)
       })
+      .finally(() => {
+        // disabling loading screen
+        loading.value = false;
+      })
+    },
 
-      this.poiVectorSource.clear();
-      this.poiList = [];
-      document.getElementById('poi-list').innerHTML = '';
+    /*
+    * toggle POI in the route by adding or removing it
+    * @param poiName - name of the POI to toggle
+    */
 
-      // disabling loading screen
-      loading.value=false;
+    togglePOI(poiName) {
+      // find the POI in the current list
+      const poi = this.poiList.find((p) => p.name === poiName);
+      if (!poi) {
+        console.error('POI not found!');
+        return;
+      }
+      // check if the POI is already in the route
+      const isInRoute = this.selectedPOIs.some((p) => p.name === poi.name);
+      if (isInRoute) {
+        // remove POI from the route
+        this.selectedPOIs = this.selectedPOIs.filter((p) => p.name !== poi.name);
+      } else {
+        // add POI to the route
+        this.selectedPOIs.push(poi);
+      }
+      // update the route with the new selected POIs
+      this.updateRoute();
+    },
+    async updateRoute() {
+      console.log('Updating route with POIs:', this.selectedPOIs);
+      
+      if (this.selectedPOIs.length < 2) {
+        this.displayError('At least two POIs are required to calculate a route.');
+        return;
+      }
+      
+      // generate coordinates from selected POIs
+      const coordinates = this.selectedPOIs.map((poi) =>
+        JSON.parse(poi.geometry).coordinates
+      );
+      
+      // close loop (return to the starting point)
+      const startCoords = JSON.parse(localStorage.getItem("tripTailorRoute")).options.startLocation.coords;
+      coordinates.push([startCoords.lon, startCoords.lat]);
+      
+      const body = JSON.stringify({
+        coordinates,
+        preference: 'shortest',
+      });
+      
+      try {
+        // send request to ORS API, still only foot walking?
+        const response = await axios.post(`${this.orsBaseUrl}foot-walking`, body, {
+          headers: {
+            Authorization: this.orsApiKey,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.status !== 200) {
+          throw new Error('Failed to update the route');
+        }
+        
+        const route = response.data.routes[0];
+        const routeGeometry = this.decodePolyline(route.geometry);
+        
+        // update the route layer
+        this.routeVectorSource.clear();
+        const routeFeature = new ol.Feature({
+          geometry: new LineString(routeGeometry),
+        });
+        this.routeVectorSource.addFeature(routeFeature);
+        
+        // adjust the map view to fit the new route
+        const routeExtent = routeFeature.getGeometry().getExtent();
+        this.map.getView().fit(routeExtent, {
+          padding: [50, 50, 50, 50],
+          duration: 1000,
+        });
+        
+        // display updated route details
+        const { distance, duration } = route.summary;
+        const distanceKm = (distance / 1000).toFixed(1);
+        const durationHours = Math.floor(duration / 3600);
+        const durationMinutes = Math.round((duration % 3600) / 60);
+        
+        const routeDetailsDiv = document.getElementById('route-details') || document.createElement('div');
+        routeDetailsDiv.id = 'route-details';
+        routeDetailsDiv.innerHTML = `
+          <h3>Updated Route Details</h3>
+          <p><strong>Total Distance:</strong> ${distanceKm} km</p>
+          <p><strong>Total Duration:</strong> ${durationHours} hours ${durationMinutes} minutes</p>
+        `;
+        
+        if (!document.getElementById('route-details')) {
+          document.body.appendChild(routeDetailsDiv);
+        }
+      } catch (error) {
+        this.displayError(`Failed to update the route: ${error.message}`);
+      }
     },
     /**
      * Sends a request to the OpenRouteService API to generate a first route for the user
@@ -312,7 +467,7 @@ export default {
         (input) => this.poiList[input.dataset.index]
       );
       if (selectedPOIs.length < 2) return this.displayError('Please select at least 2 POIs for routing.');
-
+      
       const body = JSON.stringify({
         coordinates: selectedPOIs.map(({ lon, lat }) => [lon, lat]),
         preference: 'shortest',
@@ -338,7 +493,7 @@ export default {
           geometry: new LineString(routeGeometry),
         });
         this.routeVectorSource.addFeature(routeFeature);
-
+        
         const routeExtent = routeFeature.getGeometry().getExtent();
         this.map.getView().fit(routeExtent, { padding: [50, 50, 50, 50], duration: 1000 });
 
@@ -349,9 +504,9 @@ export default {
         const distanceKm = (distance / 1000).toFixed(1); // Convert distance to km
         const durationHours = Math.floor(duration / 3600); // Convert duration to hours
         const durationMinutes = Math.round((duration % 3600) / 60); // Convert remaining seconds to minutes
-
+        
         const allSteps = route.segments.flatMap(segment => segment.steps); // Collect steps from segments
-
+        
         // Generate HTML for route details
         const stepsHtml = allSteps.map((step, index) => `
             <li>
