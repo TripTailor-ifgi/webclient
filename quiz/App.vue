@@ -14,35 +14,58 @@ import { Toast } from "bootstrap"
     { label: 'Start', left: 50, top: 50, width: 150, height: 100, isEditing: false, isSubCat:false, subcat: '' }, 
   ]);
 
-// Location Geocoding
+const startLocationQuery = ref("");
+const suggestions = ref([]);
 const startLocation = ref({ name: "", coords: { lat: null, lon: null } });
 
-const geocodeStartLocation = async (event) => {
-  const query = event.target.value;
-
-  if (!query) return;
+// Fetch suggestions from Photon API as the user types
+const fetchSuggestions = async () => {
+  if (!startLocationQuery.value) {
+    suggestions.value = [];
+    return;
+  }
 
   try {
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`
-    );
+    const response = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(startLocationQuery.value)}`);
     const data = await response.json();
 
-    if (data && data.length > 0) {
-      const { lat, lon, display_name } = data[0];
-      startLocation.value = {
-        name: display_name,
-        coords: { lat: parseFloat(lat), lon: parseFloat(lon) },
-      };
+    // Get the first suggestion only
+    const firstSuggestion = data.features[0];
+
+    if (firstSuggestion) {
+      const { name, street, housenumber, city, country } = firstSuggestion.properties;
+
+      // Construct the address string
+      const address = [
+        street ? `${street}${housenumber ? ` ${housenumber}` : ""}` : null,
+        city,
+        country
+      ]
+        .filter(Boolean) // Remove null/undefined values
+        .join(", ");
+
+      suggestions.value = [{
+        name: name || "Unbekannter Ort",
+        address: address || "Unbekannte Adresse",
+        coords: { lat: firstSuggestion.geometry.coordinates[1], lon: firstSuggestion.geometry.coordinates[0] }
+      }];
     } else {
-      console.error("No results found for the starting location.");
-      startLocation.value = { name: "", coords: { lat: null, lon: null } };
+      suggestions.value = [];
     }
   } catch (error) {
-    console.error("Geocoding failed:", error);
-    startLocation.value = { name: "", coords: { lat: null, lon: null } };
+    console.error("Error fetching suggestions:", error);
+    suggestions.value = [];
   }
 };
+
+// Select a suggestion and populate the input field
+const selectSuggestion = (suggestion) => {
+  startLocationQuery.value = `${suggestion.name} - ${suggestion.address}`;
+  startLocation.value.name = suggestion.name;
+  startLocation.value.coords = suggestion.coords;
+  suggestions.value = [];
+};
+
 
 
 // Function to draw lines between the centroids of the boxes
@@ -301,16 +324,30 @@ onMounted(() => {
 
       <div class="sidebar">
         <div>
-          <!-- Starting Point Input-->
+          <!-- Starting Point Input with Autosuggestions -->
           <label for="startLoc" class="form-label">Starting Point</label>
           <input
             type="text"
             class="form-control"
             id="startLoc"
             name="start-location"
-            placeholder="e.g., Münster Hauptbahnhof" 
-            @change="geocodeStartLocation"
+            placeholder="e.g., Münster (Westf.) Hauptbahnhof"
+            v-model="startLocationQuery"
+            @input="fetchSuggestions"
           />
+          <ul v-if="suggestions.length > 0" class="suggestions-list">
+            <li 
+              v-for="(suggestion, index) in suggestions" 
+              :key="index"
+              @click="selectSuggestion(suggestion)"
+              class="suggestion-item"
+            >
+              <strong>{{ suggestion.name }}</strong> <br>
+              <small>{{ suggestion.address }}</small> <!-- Display the address -->
+            </li>
+          </ul>
+
+
           <hr>
           <!-- Date of Travel Input-->
           <label for="date" class="form-label">Day of Travel</label>
@@ -501,5 +538,25 @@ datalist {
 }
 .custom-range::-ms-track {
   background-color: var(--tt-gray);
+}
+.suggestions-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background: white;
+  border: 1px solid #ccc;
+  position: absolute;
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.suggestion-item {
+  padding: 10px;
+  cursor: pointer;
+}
+
+.suggestion-item:hover {
+  background: #f0f0f0;
 }
 </style>
