@@ -213,7 +213,6 @@ export default {
       loading.value = true;
       let cookieData = JSON.parse(localStorage.getItem("tripTailorRoute"))
       
-
       axios({
         method: 'post',
         url: `${import.meta.env.VITE_API_BASE_URL}/api/pois`,
@@ -305,8 +304,6 @@ export default {
         let startCoords = [cookieData.options.startLocation.coords.lon, cookieData.options.startLocation.coords.lat]
         let routeLoc = data.closest_results
 
-        console.log('route locations:', routeLoc);
-
         locationCoords.push(startCoords)
         
         // correctly populate selectedPOIs
@@ -317,8 +314,6 @@ export default {
           );
           return matchingPoi;
         }).filter(Boolean);
-
-        console.log('selected POIs:', this.selectedPOIs);
 
         for (let i = 0; i < routeLoc.length; i++) {
           let geom = JSON.parse(routeLoc[i].results[0].geometry)
@@ -363,6 +358,7 @@ export default {
       this.updateRoute();
     },
     async updateRoute() {
+      loading.value = true;
       console.log('Updating route with POIs:', this.selectedPOIs);
       
       if (this.selectedPOIs.length < 2) {
@@ -386,7 +382,8 @@ export default {
       
       try {
         // send request to ORS API, still only foot walking?
-        const response = await axios.post(`${this.orsBaseUrl}foot-walking`, body, {
+        let mode = document.querySelector('input[name="transport-mode"]:checked').value
+        const response = await axios.post(`${this.orsBaseUrl}${mode}`, body, {
           headers: {
             Authorization: this.orsApiKey,
             'Content-Type': 'application/json',
@@ -413,27 +410,22 @@ export default {
           padding: [50, 50, 50, 50],
           duration: 1000,
         });
+
+        // Create the navigation instructions
+        const routeStepsDiv = document.getElementById('route-steps');
+        if(routeStepsDiv){
+          this.createNavigationSteps(route, routeStepsDiv)
+        }
         
         // display updated route details
-        const { distance, duration } = route.summary;
-        const distanceKm = (distance / 1000).toFixed(1);
-        const durationHours = Math.floor(duration / 3600);
-        const durationMinutes = Math.round((duration % 3600) / 60);
-        
-        const routeDetailsDiv = document.getElementById('route-details') || document.createElement('div');
-        routeDetailsDiv.id = 'route-details';
-        routeDetailsDiv.innerHTML = `
-          <h3>Updated Route Details</h3>
-          <p><strong>Total Distance:</strong> ${distanceKm} km</p>
-          <p><strong>Total Duration:</strong> ${durationHours} hours ${durationMinutes} minutes</p>
-        `;
-        
-        if (!document.getElementById('route-details')) {
-          document.body.appendChild(routeDetailsDiv);
+        const routeDetailsDiv = document.getElementById('route-details');
+        if(routeStepsDiv){
+          this.createRouteDetails(route, routeDetailsDiv)
         }
       } catch (error) {
         this.displayError(`Failed to update the route: ${error.message}`);
       }
+      loading.value = false;
     },
     /**
      * Sends a request to the OpenRouteService API to generate a first route for the user
@@ -464,26 +456,119 @@ export default {
         });
         this.routeVectorSource.addFeature(routeFeature);
 
+        // Create the navigation instructions
+        const routeStepsDiv = document.getElementById('route-steps');
+        if(routeStepsDiv){
+          this.createNavigationSteps(route, routeStepsDiv)
+        }
+        const routeDetailsDiv = document.getElementById('route-details');
+        if(routeStepsDiv){
+          this.createRouteDetails(route, routeDetailsDiv)
+        }
+        
         // fit map to show the entire route
         const routeExtent = routeFeature.getGeometry().getExtent();
         this.map.getView().fit(routeExtent, { padding: [50, 50, 50, 50], duration: 1000 });
 
-        // display route details
-        const { distance, duration } = route.summary;
-        const distanceKm = (distance / 1000).toFixed(1);
-        const durationHours = Math.floor(duration / 3600);
-        const durationMinutes = Math.round((duration % 3600) / 60);
-
-        const routeDetailsDiv = document.getElementById('route-details');
-        if (routeDetailsDiv) {
-          routeDetailsDiv.innerHTML = `
-            <h3>Initial Route Details</h3>
-            <p><strong>Total Distance:</strong> ${distanceKm} km</p>
-            <p><strong>Total Duration:</strong> ${durationHours} hours ${durationMinutes} minutes</p>
-          `;
-        }
+        
       }).catch((e) => console.log(e))
     },
+    createRouteDetails(route, parent){
+      if(!route || !parent){
+        this.displayError("Navigation could not be loaded")
+        return ""
+      }
+      parent.innerHTML=""
+
+      // display route details
+      const { distance } = route.summary;
+      const distanceKm = (distance / 1000).toFixed(1);
+      
+      let distp = document.createElement("p")
+      distp.innerText= `Distance: ${distanceKm}km`
+      parent.appendChild(distp)
+
+      // create POI Location List
+      let cookieData = JSON.parse(localStorage.getItem("tripTailorRoute"))
+      let locNames = []
+      locNames.push({"name":cookieData.options.startLocation.name, "start":true, "end":false})
+      for (let i = 0; i < this.selectedPOIs.length; i++) {
+        locNames.push({"name":this.selectedPOIs[[i]].name, "start":false, "end":false})
+      }
+      locNames.push({"name":cookieData.options.startLocation.name, "start":false, "end":true})
+
+      for (let i = 0; i < locNames.length; i++) {
+        let loc = locNames[i]
+
+        let icon = ""
+        if(loc.start){
+          icon = "../../src/assets/icons/route-start.svg"
+        }else if(loc.end){
+          icon = "../../src/assets/icons/route-end.svg"
+        }else{
+          icon = "../../src/assets/icons/route-step.svg"
+        }
+
+        let div = document.createElement("DIV")
+        div.style.display = "grid"
+        div.style.grid="auto/ 1fr 4fr"
+        div.style.borderBottom = "1px solid var(--tt-gray)";
+        div.style.marginTop="1rem"
+        let img = document.createElement("img")
+        img.src = icon
+        img.style.gridColumn="1"
+        img.style.height="1rem"
+        img.style.justifySelf="center"
+        let p = document.createElement("p")
+        p.innerText = loc.name
+        p.style.gridColumn="2"
+        div.appendChild(img)
+        div.appendChild(p)
+        parent.appendChild(div)
+        
+      }
+    },
+    createNavigationSteps(route, parent){
+      if(!route || !parent){
+        this.displayError("Navigation could not be loaded")
+        return
+      }
+      parent.innerHTML=""
+      const allSteps = route.segments.flatMap(segment => segment.steps); // Collect steps from segments
+      
+      for (let i = 0; i < allSteps.length; i++) {
+        let step = allSteps[i]
+
+        let inst = (step.instruction).toLowerCase()
+        let icon = ""
+        if(inst.includes("right")){
+          icon = "../../src/assets/icons/right.svg"
+        }else if(inst.includes("left")){
+          icon = "../../src/assets/icons/left.svg"
+        } else if(inst.includes("straight")){
+          icon = "../../src/assets/icons/straight.svg"
+        }else if(inst.includes("west") || inst.includes("east") || inst.includes("south") || inst.includes("north")){
+          icon = "../../src/assets/icons/compass.svg"
+        }else{
+          icon = "../../src/assets/icons/route_default.svg"
+        }
+
+        let div = document.createElement("DIV")
+        div.style.display = "grid"
+        div.style.grid="auto/ 1fr 4fr"
+        div.style.borderBottom = "1px solid var(--tt-gray)";
+        div.style.marginTop="1rem"
+        let img = document.createElement("img")
+        img.src = icon
+        img.style.gridColumn="1"
+        let p = document.createElement("p")
+        p.innerText = `In ${(step.distance).toFixed(0)}m: ${step.instruction}`
+        p.style.gridColumn="2"
+        div.appendChild(img)
+        div.appendChild(p)
+        parent.appendChild(div)
+      }
+    }/*,
     async createRoute() {
       // Clear previous route
       this.routeVectorSource.clear();
@@ -558,7 +643,7 @@ export default {
         this.displayError(`Routing error: ${error.message}`);
       }
 
-    },
+    }*/,
     decodePolyline(encoded) {
       let lat = 0, lng = 0, coordinates = [], shift = 0, result = 0, b, index = 0;
 
@@ -623,8 +708,8 @@ export default {
     </div>
     <div class="info-container">
       <div class="transport-mode-container ">
-        <h4 class="tt-text">Mode of transportation</h4>
-        <div class="btn-group transport-mode-group" role="group" aria-label="Transportaion Mode Button Group" @change="createRoute">
+        <h5 class="tt-text">Mode of transportation</h5>
+        <div class="btn-group transport-mode-group" role="group" aria-label="Transportaion Mode Button Group" @change="updateRoute">
           <input type="radio" class="btn-check" name="transport-mode" value="foot-walking" id="btnradio1" autocomplete="off" checked>
           <label class="btn btn-outline-primary" for="btnradio1"><i class="bi bi-person-walking"></i></label>
 
@@ -635,6 +720,9 @@ export default {
           <label class="btn btn-outline-primary" for="btnradio3"><i class="bi bi-car-front-fill"></i></label>
         </div>
       </div>
+      <h5 class="info-sub-header">Navigation Steps</h5>
+      <div id="route-steps"></div>
+      <h5 class="info-sub-header">Route Details</h5>
       <div id="route-details" class="route-details">
         <!-- Route details will be dynamically populated here -->
       </div>
@@ -672,16 +760,18 @@ export default {
   z-index: 1500;
   background: rgba(92, 92, 92, 0.373);
   width: 100%;
-  height: 600px; 
+  height: 100%; 
   margin-bottom: 20px;
-  display: none;
 }
 
 .control-panel {
   padding: 15px;
   margin-bottom: 10px;
 }
-
+.info-sub-header{
+  margin-left: 20px;
+  margin-top: 1rem;
+}
 /* Style for the Transport mode selector */
 .transport-mode-container {
   background: var(--tt-gray);
@@ -718,9 +808,6 @@ export default {
   left: 0;
   width: 100%;
   height: 100%; 
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  margin-bottom: 20px;
 }
 
 .info-container {
@@ -732,27 +819,9 @@ export default {
 .route-details {
   flex: 1; 
   width: 100%;
-  background: #f9f9f9;
   padding: 15px;
-  height: calc( 100% - 7rem);
+  height: calc( 100vh - 75vh - 3rem - 40px);
   overflow-y: scroll;
-}
-
-.route-details h3 {
-  margin-top: 0;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #e0e0e0;
-}
-
-.route-details ul {
-  padding-left: 20px;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.route-details li {
-  margin-bottom: 10px;
-  line-height: 1.5;
 }
 
 .create-route-btn {
@@ -802,13 +871,20 @@ export default {
   color: #aaa;
   cursor: pointer;
 }
+#route-steps{
+  max-height: 75vh;
+  overflow-y: scroll;
+  padding: 20px;
+  color: var(--tt-dark);
+  border-bottom: 2px solid var(--tt-gray);
+}
 
 @media only screen and (min-width: 950px) {
 .route-planning-container {
   display:grid;
   grid-template-columns: 4fr 1fr;
 }
-.map-container {
+.map-container, .loading {
   flex: 1; 
   grid-column: 1;
   height:95vh;
@@ -819,6 +895,13 @@ export default {
 }
 .fit-width{
   grid-column: 1/3;
+}
+#route-steps{
+  max-height: 45vh;
+}
+.route-details {
+  height: calc( 100vh - 45vh - 3rem - 40px - 7rem - 2rem);
+  overflow-y: scroll;
 }
 
 }
