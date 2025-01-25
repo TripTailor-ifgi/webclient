@@ -7,7 +7,7 @@ export default {
 <template>
   <!-- Footer -->
   <footer>
-      <p>Footer Content</p>
+      <p>©2025 TripTailor</p>
     </footer>
 </template>
 
