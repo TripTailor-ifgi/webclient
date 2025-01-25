@@ -4,7 +4,7 @@
 <script>
 import 'ol/ol.css';
 import * as ol from 'ol';
-import { fromLonLat } from 'ol/proj';
+import { fromLonLat, toLonLat } from 'ol/proj';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
 import TileLayer from 'ol/layer/Tile';
@@ -146,7 +146,7 @@ export default {
           info += `</div>`;
 
           const address = feature.get('address');
-          if (address) {
+          if (address && address.trim() !== "") { // fix empty addresses on popup 
             info += `<p><strong>Address:</strong> ${address}</p>`;
           }
 
@@ -414,11 +414,11 @@ export default {
         
         const routeDetailsDiv = document.getElementById('route-details') || document.createElement('div');
         routeDetailsDiv.id = 'route-details';
-        routeDetailsDiv.innerHTML = `
-          <h3>Updated Route Details</h3>
-          <p><strong>Total Distance:</strong> ${distanceKm} km</p>
-          <p><strong>Total Duration:</strong> ${durationHours} hours ${durationMinutes} minutes</p>
-        `;
+        // routeDetailsDiv.innerHTML = `
+        //   <h3>Updated Route Details</h3>
+        //   <p><strong>Total Distance:</strong> ${distanceKm} km</p>
+        //   <p><strong>Total Duration:</strong> ${durationHours} hours ${durationMinutes} minutes</p>
+        // `;
         
         if (!document.getElementById('route-details')) {
           document.body.appendChild(routeDetailsDiv);
@@ -467,13 +467,13 @@ export default {
         const durationMinutes = Math.round((duration % 3600) / 60);
 
         const routeDetailsDiv = document.getElementById('route-details');
-        if (routeDetailsDiv) {
-          routeDetailsDiv.innerHTML = `
-            <h3>Initial Route Details</h3>
-            <p><strong>Total Distance:</strong> ${distanceKm} km</p>
-            <p><strong>Total Duration:</strong> ${durationHours} hours ${durationMinutes} minutes</p>
-          `;
-        }
+        // if (routeDetailsDiv) {
+        //   routeDetailsDiv.innerHTML = `
+        //     <h3>Initial Route Details</h3>
+        //     <p><strong>Total Distance:</strong> ${distanceKm} km</p>
+        //     <p><strong>Total Duration:</strong> ${durationHours} hours ${durationMinutes} minutes</p>
+        //   `;
+        // }
       }).catch((e) => console.log(e))
     },
     async createRoute() {
@@ -534,13 +534,13 @@ export default {
 
         const routeDetailsDiv = document.getElementById('route-details') || document.createElement('div');
         routeDetailsDiv.id = 'route-details';
-        routeDetailsDiv.innerHTML = `
-            <h3>Route Details</h3>
-            <p><strong>Total Distance:</strong> ${distanceKm} km</p>
-            <p><strong>Total Duration:</strong> ${durationHours} hours ${durationMinutes} minutes</p>
-            <h4>Detailed Route Steps:</h4>
-            <ul>${stepsHtml}</ul>
-        `;
+        // routeDetailsDiv.innerHTML = `
+        //     <h3>Route Details</h3>
+        //     <p><strong>Total Distance:</strong> ${distanceKm} km</p>
+        //     <p><strong>Total Duration:</strong> ${durationHours} hours ${durationMinutes} minutes</p>
+        //     <h4>Detailed Route Steps:</h4>
+        //     <ul>${stepsHtml}</ul>
+        // `;
 
         // Append route details div to the document if not already present
         if (!document.getElementById('route-details')) {
@@ -551,6 +551,66 @@ export default {
       }
 
     },
+
+    downloadRouteAsGPX() {
+
+      // check if there's an existing route
+      const routeFeature = this.routeVectorSource.getFeatures()[0];
+      if (!routeFeature) {
+        this.displayError('No route available to download');
+        return;
+      }
+      
+      // convert OpenLayers geometry to WGS84 coordinates
+      const routeGeometry = routeFeature.getGeometry();
+      const coordinates = routeGeometry.getCoordinates();
+      const wgs84Coordinates = coordinates.map(coord => 
+        toLonLat(coord)  // convert back to lon/lat
+      );
+      
+      // generate GPX file content
+      const gpxContent = this.generateGPXContent(wgs84Coordinates);
+      
+      // vreate and trigger download
+      const blob = new Blob([gpxContent], { type: 'application/gpx+xml' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `route_${new Date().toISOString().replace(/:/g, '-')}.gpx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    },
+
+    // generate gpx file from coordinates
+    // @param coordinates - array of [lon, lat] pairs
+    generateGPXContent(coordinates) {
+        const gpxHeader = `<?xml version="1.0" encoding="UTF-8"?>
+      <gpx version="1.1" creator="TripTailor" 
+        xmlns="http://www.topografix.com/GPX/1/1"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
+        <metadata>
+          <name>Route Generated by TripTailor</name>
+          <time>${new Date().toISOString()}</time>
+        </metadata>
+        <trk>
+          <name>Walking Route</name>
+          <trkseg>`;
+        const gpxTrackPoints = coordinates.map((coord, index) => 
+          `      <trkpt lat="${coord[1]}" lon="${coord[0]}">
+            <ele>0</ele>
+          </trkpt>`
+        ).join('\n');
+        const gpxFooter = `
+        </trkseg>
+      </trk>
+      </gpx>`;
+        return gpxHeader + gpxTrackPoints + gpxFooter;
+      },
+
+
     decodePolyline(encoded) {
       let lat = 0, lng = 0, coordinates = [], shift = 0, result = 0, b, index = 0;
 
@@ -614,7 +674,8 @@ export default {
       </div>
 
       <div id="route-details" class="route-details">
-        <!-- Route details will be dynamically populated here -->
+        <!-- download the route -->
+        <button @click="downloadRouteAsGPX" class="download-gpx-btn">Download GPX</button>
       </div>
     </div>
   </div>
@@ -740,7 +801,7 @@ export default {
 
 .ol-popup {
   position: absolute;
-  background-color: white;
+  background-color: rgb(255, 255, 255);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
   padding: 10px;
   border-radius: 4px;
@@ -758,5 +819,21 @@ export default {
   color: #aaa;
   cursor: pointer;
 }
+
+.download-gpx-btn {
+  width: 100%;
+  padding: 10px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.download-gpx-btn:hover {
+  background-color: #1976D2;
+}
+
 
 </style>
