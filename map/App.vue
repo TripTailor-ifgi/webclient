@@ -8,9 +8,9 @@ import * as ol from 'ol';
 import { fromLonLat } from 'ol/proj';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
-import ImageWMS from 'ol/source/ImageWMS.js';
+import XYZ from 'ol/source/XYZ';
+import TileLayer from 'ol/layer/Tile';
 import { Icon } from 'ol/style';
-import {Image as ImageLayer} from 'ol/layer.js';
 import axios from 'axios'
 import { Stroke, Style } from 'ol/style';
 import { LineString, Point } from 'ol/geom';
@@ -53,10 +53,11 @@ export default {
       this.map = new ol.Map({
         target: 'map',
         layers: [
-          new ImageLayer({
-            source: new ImageWMS({
-              url: 'https://sgx.geodatenzentrum.de/wms_basemapde?Version=1.3.0',
-              params: {'LAYERS': 'de_basemapde_web_raster_farbe'}
+          new TileLayer({
+            source: new XYZ({
+              url:
+                'https://sgx.geodatenzentrum.de/wmts_basemapde/tile/1.0.0/de_basemapde_web_raster_farbe/default/GLOBAL_WEBMERCATOR/{z}/{y}/{x}.png',
+              projection: 'EPSG:3857',
             }),
           }),
           new VectorLayer({
