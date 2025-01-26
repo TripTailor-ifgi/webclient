@@ -154,7 +154,7 @@ export default {
           info += `</div>`;
 
           const address = feature.get('address');
-          if (address) {
+          if (address && address.trim() !== "") { // fix empty addresses on popup 
             info += `<p><strong>Address:</strong> ${address}</p>`;
           }
 
@@ -362,18 +362,60 @@ export default {
       console.log('Updating route with POIs:', this.selectedPOIs);
       
       if (this.selectedPOIs.length < 2) {
-        this.displayError('At least two POIs are required to calculate a route.');
+        this.displayError('At least two POIs are required to calculate a route.'); // this error leads to a never ending loading page? so loading.value needs to be false or something
         return;
       }
       
-      // generate coordinates from selected POIs
-      const coordinates = this.selectedPOIs.map((poi) =>
-        JSON.parse(poi.geometry).coordinates
-      );
+      // Get start location details
+      const tripData = JSON.parse(localStorage.getItem("tripTailorRoute"));
+      const startLocation = tripData.options.startLocation;
+      const startCoords = [startLocation.coords.lon, startLocation.coords.lat];
+
       
+      // this.selectedPOIs.forEach((poi, index) => {
+      //   const poiCoords = JSON.parse(poi.geometry).coordinates;
+      //   console.log(`${index + 2}. POI: ${poi.name}, Coordinates: ${poiCoords}`);
+      // });
+  
+      // // generate coordinates from selected POIs
+      // const coordinates = this.selectedPOIs.map((poi) =>
+      //   JSON.parse(poi.geometry).coordinates
+      // );
+
+      // generate coordinates from selected POIs, add start location at the end
+      const coordinates = [
+        startCoords,
+        ...this.selectedPOIs.map((poi) => JSON.parse(poi.geometry).coordinates),
+        startCoords  // close the loop by returning to start
+      ];
+      
+      // coordinates.slice(1, -1).forEach((coord, index) => {
+      //   const poi = this.selectedPOIs[index];
+      //   console.log(`${index + 2}. POI: ${poi.name}, Coordinates: ${coord}`);
+      // });
+
+      coordinates.forEach((coord, index) => {
+        if (index === 0) {
+          console.log(`1. start loc: ${startLocation.name}, coord: ${coord}`);
+        } else if (index === coordinates.length - 1) {
+          console.log(`${index + 1}. end loc (should be start loc): ${startLocation.name}, coord: ${coord}`);
+        } else {
+          const poi = this.selectedPOIs[index - 1];
+          console.log(`${index + 1}. poi: ${poi.name}, coord: ${coord}`);
+        }
+      });
+
+
+      // 1. Start Location: Münster (Westf) Hauptbahnhof
+      // App.vue:382 2. POI: Namaste, Coordinates: 7.6371191,51.9557617
+      // App.vue:382 3. POI: Pizzeria - Ristorante L'Incontro, Coordinates: 7.6127629,51.9524648
+      // App.vue:382 4. POI: Ristorante Milano Münster, Coordinates: 7.6102577,51.9678757
+      // App.vue:382 5. POI: Vinothek am Theater, Coordinates: 7.629157,51.9654461
+
+
       // close loop (return to the starting point)
-      const startCoords = JSON.parse(localStorage.getItem("tripTailorRoute")).options.startLocation.coords;
-      coordinates.push([startCoords.lon, startCoords.lat]);
+      // const startCoords = JSON.parse(localStorage.getItem("tripTailorRoute")).options.startLocation.coords;
+      // coordinates.push([startCoords.lon, startCoords.lat]);
       
       const body = JSON.stringify({
         coordinates,
