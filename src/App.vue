@@ -93,10 +93,14 @@ import FooterComponent  from "./components/Footer.vue"
   padding: 10px 20px;
   background-color: var(--tt);
   color: var(--tt-dark);
-  border: none;
+  border: 1px solid var(--tt);
   border-radius: 5px;
   cursor: pointer;
   text-decoration: none;
+}
+.hero-text button:hover, .hero-text a:hover, .preference a:hover {
+  border: 1px solid var(--tt-dark);
+  border-radius: 5px;
 }
 
 /* Main Content */
