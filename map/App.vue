@@ -618,11 +618,13 @@ export default {
       parent.innerHTML=""
 
       // display route details
-      const { distance } = route.summary;
+      const { distance, duration  } = route.summary;
       const distanceKm = (distance / 1000).toFixed(1);
+      const durationHours = Math.floor(duration / 3600); // Convert duration to hours
+      const durationMinutes = Math.round((duration % 3600) / 60); // Convert remaining seconds to minutes
       
       let distp = document.createElement("p")
-      distp.innerText= `Distance: ${distanceKm}km`
+      distp.innerText= `Distance: ${distanceKm}km | Duration: ${durationHours}h ${durationMinutes}m`
       parent.appendChild(distp)
 
       // create POI Location List
@@ -705,82 +707,7 @@ export default {
         div.appendChild(p)
         parent.appendChild(div)
       }
-    }/*,
-    async createRoute() {
-      // Clear previous route
-      this.routeVectorSource.clear();
-
-      const selectedPOIs = Array.from(document.querySelectorAll('input:checked')).map(
-        (input) => this.poiList[input.dataset.index]
-      );
-      if (selectedPOIs.length < 2) return this.displayError('Please select at least 2 POIs for routing.');
-      
-      const body = JSON.stringify({
-        coordinates: selectedPOIs.map(({ lon, lat }) => [lon, lat]),
-        preference: 'shortest',
-      });
-
-      try {
-        const response = await fetch(this.orsBaseUrl + document.getElementById('transport-mode').value, {
-          method: 'POST',
-          headers: {
-            Authorization: this.orsApiKey,
-            'Content-Type': 'application/json',
-          },
-          body,
-        });
-
-        if (!response.ok) return this.displayError(`Route error: ${response.statusText}`);
-        const routeData = await response.json();
-
-        const route = routeData.routes[0];
-        const routeGeometry = this.decodePolyline(route.geometry);
-
-        const routeFeature = new ol.Feature({
-          geometry: new LineString(routeGeometry),
-        });
-        this.routeVectorSource.addFeature(routeFeature);
-        
-        const routeExtent = routeFeature.getGeometry().getExtent();
-        this.map.getView().fit(routeExtent, { padding: [50, 50, 50, 50], duration: 1000 });
-
-
-
-        // Route Details Display
-        const { distance, duration } = route.summary;
-        const distanceKm = (distance / 1000).toFixed(1); // Convert distance to km
-        const durationHours = Math.floor(duration / 3600); // Convert duration to hours
-        const durationMinutes = Math.round((duration % 3600) / 60); // Convert remaining seconds to minutes
-        
-        const allSteps = route.segments.flatMap(segment => segment.steps); // Collect steps from segments
-        
-        // Generate HTML for route details
-        const stepsHtml = allSteps.map((step, index) => `
-            <li>
-                <strong>Step ${index + 1}:</strong> ${step.instruction}
-                (Distance: ${(step.distance / 1000).toFixed(2)} km, Duration: ${(step.duration / 60).toFixed(1)} mins)
-            </li>
-        `).join('');
-
-        const routeDetailsDiv = document.getElementById('route-details') || document.createElement('div');
-        routeDetailsDiv.id = 'route-details';
-        routeDetailsDiv.innerHTML = `
-            <h3>Route Details</h3>
-            <p><strong>Total Distance:</strong> ${distanceKm} km</p>
-            <p><strong>Total Duration:</strong> ${durationHours} hours ${durationMinutes} minutes</p>
-            <h4>Detailed Route Steps:</h4>
-            <ul>${stepsHtml}</ul>
-        `;
-
-        // Append route details div to the document if not already present
-        if (!document.getElementById('route-details')) {
-            document.body.appendChild(routeDetailsDiv);
-        }
-      } catch (error) {
-        this.displayError(`Routing error: ${error.message}`);
-      }
-
-    }*/,
+    },
     decodePolyline(encoded) {
       let lat = 0, lng = 0, coordinates = [], shift = 0, result = 0, b, index = 0;
 
@@ -857,7 +784,7 @@ export default {
           <label class="btn btn-outline-primary" for="btnradio3"><i class="bi bi-car-front-fill"></i></label>
         </div>
       </div>
-      <h5 class="info-sub-header">Route Details</h5>
+      <h5 class="info-sub-header">Your Tailored Trip</h5>
       <div id="route-details" class="route-details">
         <!-- Route details will be dynamically populated here -->
       </div>
@@ -959,6 +886,7 @@ export default {
   padding: 15px;
   height: calc( 100vh - 75vh - 3rem - 40px);
   overflow-y: scroll;
+  border-bottom: 2px solid var(--tt-gray);
 }
 
 .create-route-btn {
@@ -1039,6 +967,7 @@ export default {
 .route-details {
   height: calc( 100vh - 45vh - 3rem - 40px - 7rem - 2rem);
   overflow-y: scroll;
+  border-bottom: 2px solid var(--tt-gray);
 }
 }
 
