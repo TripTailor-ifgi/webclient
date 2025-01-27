@@ -22,7 +22,7 @@ import FooterComponent  from "./components/Footer.vue"
       <section class="preference">
         <div class="preference-text">
           <span class="headline">You already feel lost in a city even before you arrived?</span>
-          <span class="headline-add">We provide you the only information you really need. <br/> Customized Trips, tailored for you!</span>
+          <span class="headline-add">We only provide you information you really need.<br/>Customized Trips, tailored for you!</span>
           <a href="/about/">Learn More</a>
         </div>
       </section>
