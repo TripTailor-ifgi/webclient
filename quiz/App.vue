@@ -45,8 +45,8 @@ const fetchSuggestions = async () => {
         .join(", ");
 
       suggestions.value = [{
-        name: name || "Unbekannter Ort",
-        address: address || "Unbekannte Adresse",
+        name: name || "Unknown location",
+        address: address || "Unknown address",
         coords: { lat: firstSuggestion.geometry.coordinates[1], lon: firstSuggestion.geometry.coordinates[0] }
       }];
     } else {
