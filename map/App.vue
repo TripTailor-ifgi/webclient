@@ -151,6 +151,16 @@ export default {
             }),
           }),
           new VectorLayer({
+            source: this.routeVectorSource,
+            style: new Style({
+              stroke: new Stroke({
+                color: '#291d00',
+                width: 5,
+                lineDash: [10, 10],
+              }),
+            }),
+          }),
+          new VectorLayer({
             source: this.poiVectorSource,
             style: (feature) => {
               const iconUrl = feature.get('iconUrl');
@@ -178,16 +188,6 @@ export default {
                 }),
               ];
             },
-          }),
-          new VectorLayer({
-            source: this.routeVectorSource,
-            style: new Style({
-              stroke: new Stroke({
-                color: '#291d00',
-                width: 5,
-                lineDash: [10, 10],
-              }),
-            }),
           }),
         ],
         overlays: [overlay],

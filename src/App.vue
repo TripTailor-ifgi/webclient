@@ -10,9 +10,9 @@ import FooterComponent  from "./components/Footer.vue"
 
     <section class="hero"><!--Bild von <a href="https://pixabay.com/de/users/karinkarin-145974/?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=1662569">KarinKarin</a> auf <a href="https://pixabay.com/de//?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=1662569">Pixabay</a> -->
       <div class="hero-text">
-        <span class="headline">Trips tailored to blow your mind</span>
-        <span class="headline-add">legally</span>
-        <a href="/quiz/">Start Now</a>
+        <span class="headline">Trips to blow your mind</span>
+        <span class="headline-add">Tailored for You</span>
+        <a href="/quiz/" id="startNow">Start Now</a>
       </div>
     </section>
 
@@ -21,8 +21,9 @@ import FooterComponent  from "./components/Footer.vue"
       <!-- Preference Section -->
       <section class="preference">
         <div class="preference-text">
-          <span class="headline">You already feel lost in a city even before you arrived?</span>
-          <span class="headline-add">We only provide you information you really need.<br/>Customized Trips, tailored for you!</span>
+          <span class="headline">Feeling lost in a city before you even arrive?</span>
+          <span class="headline-add">We provide the information you really need.<br/>Customized Trips, tailored for you!</span>
+          <span>TripTailor is your OpenSource, free to use, automated trip planner which only provides locations and activities that fit your interests. Just choose your desired city and starting point and tell us what you like. Leave the actual planning to TripTailor!</span>
           <a href="/about/">Learn More</a>
         </div>
       </section>
@@ -93,21 +94,21 @@ import FooterComponent  from "./components/Footer.vue"
   padding: 10px 20px;
   background-color: var(--tt);
   color: var(--tt-dark);
-  border: 1px solid var(--tt);
+  border: none;
   border-radius: 5px;
   cursor: pointer;
   text-decoration: none;
 }
-.hero-text button:hover, .hero-text a:hover, .preference a:hover {
-  border: 1px solid var(--tt-dark);
-  border-radius: 5px;
+
+#startNow{
+  font-size: 18pt;
 }
 
 /* Main Content */
 main {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  grid-template-rows: 1fr 1fr;
+  grid-template-rows: 1.2fr 1fr;
   justify-items: center;
 }
 
