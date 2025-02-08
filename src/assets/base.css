@@ -12,7 +12,7 @@
   /* TripTailor specific colors*/
   --tt-gray: #e8e7e7;
   --tt-light: #feecc2;
-  --tt-dark: #291d00;
+  --tt-dark: rgb(41, 29, 0);
   --tt: #f2aa02;
 }
 

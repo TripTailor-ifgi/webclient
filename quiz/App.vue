@@ -8,6 +8,11 @@ import { Toast } from "bootstrap"
 
   const range = ref(3)
   const errmsg = ref()
+  const infomsg = ref("Please select a starting point")
+  const addressEntered = ref(false)
+  const dateEntered = ref(false)
+  const customizerEnabled = ref(false)
+  const routable = ref(false)
   const lines = useLinesStore();
   const circle = ref(null);
   const boxes = reactive([
@@ -18,7 +23,9 @@ const startLocationQuery = ref("");
 const suggestions = ref([]);
 const startLocation = ref({ name: "", coords: { lat: null, lon: null } });
 
-// Fetch suggestions from Photon API as the user types
+/**
+ * Fetches suggestions from Photon API
+ */
 const fetchSuggestions = async () => {
   if (!startLocationQuery.value) {
     suggestions.value = [];
@@ -58,17 +65,49 @@ const fetchSuggestions = async () => {
   }
 };
 
-// Select a suggestion and populate the input field
+/**
+ * Selects suggestion for autocomplete of address search, populates the input field
+ * @param {never} suggestion
+ */
 const selectSuggestion = (suggestion) => {
   startLocationQuery.value = `${suggestion.name} - ${suggestion.address}`;
   startLocation.value.name = suggestion.name;
   startLocation.value.coords = suggestion.coords;
   suggestions.value = [];
+
+  addressEntered.value = true;
+  infomsg.value = "Please select your day of travel";
 };
 
+/**
+ * Handle enabling elements after a date is selected
+ * */
+const checkDateInput = (event) => {
+  if (!event) {
+    console.log("Error: No event supplied");
+    return -1;
+  }
+  if(addressEntered.value){
+    if(event.target.value) {
+      let date = new Date(event.target.value).getTime() / 1000;
+      let now = Date.now()/1000;
+      if(date >= now){
+        dateEntered.value = true;
+        customizerEnabled.value = true;
+      }else{
+        infomsg.value = "Please select a valid date. The day of travel cannot be in the past";
+        dateEntered.value = false;
+        customizerEnabled.value = false;
+      }
+    }
+  }else {
+    dateEntered.value = false;
+  }
+}
 
-
-// Function to draw lines between the centroids of the boxes
+/**
+ * Function to draw lines between the centroids of the boxes
+ */
 const drawLines = () => {
   let tmpArray = [];
 
@@ -99,7 +138,9 @@ const draggingBox = ref(null);
 const startPosition = ref({ x: 0, y: 0 });
 const initialPosition = ref({ left: 0, top: 0 });
 
-// start dragging a box
+/**
+ * Starts dragging
+ * */
 const startDragging = (box, event) => {
   draggingBox.value = box;
   startPosition.value = { x: event.clientX, y: event.clientY };
@@ -110,7 +151,10 @@ const startDragging = (box, event) => {
   document.addEventListener('mouseup', stopDragging);
 };
 
-//handle dragging movement
+/**
+ * Handles dragging actions
+ * @param {Event} event
+ */
 const onDrag = (event) => {
   if (!draggingBox.value) return;
 
@@ -124,7 +168,9 @@ const onDrag = (event) => {
   drawLines();
 };
 
-// stop dragging
+/**
+ * Stops dragging
+ * */
 const stopDragging = () => {
   draggingBox.value = null;
   document.removeEventListener('mousemove', onDrag);
@@ -134,7 +180,9 @@ const stopDragging = () => {
   // drawLines();
 };
 
-// update positions in a circle, with the "Start" box on the leftmost side
+/**
+ * update positions in a circle, with the "Start" box on the leftmost side
+ * */
 const updatePositions = () => {
   if (!circle.value) return;
 
@@ -155,12 +203,15 @@ const updatePositions = () => {
   drawLines();  // Update the lines after repositioning
 };
 
-
+/**
+ * Adds a box entity to the boxes array so that it can be processed and displayed in the customizer
+ * */
 const addBox = () => {
   boxes.push({ label: '', left: 50, top: 50, width: 150, height: 100, isEditing: true,isSubCat:false, subcat:'' });
   nextTick(() => {
     updatePositions();
   });
+  routable.value = true;
 };
 
 /**
@@ -180,7 +231,9 @@ const deleteBox = (box) => {
   });
 };
 
-
+/**
+ * Change referenced values / states if a top level category is selected
+ */
 const finishEditing = (box) => {
   box.isEditing = false;
   box.isSubCat = true;
@@ -189,6 +242,9 @@ const finishEditing = (box) => {
   })
 };
 
+/**
+ * Change referenced values / states if a sub level category is selected
+ */
 const finishSubCat = (box) => {
   box.isSubCat = false;
   nextTick(() => {
@@ -267,7 +323,6 @@ onMounted(() => {
 <template>
   <div class="quiz-container">
     <NavbarHeader/>
-    
     <main>
       <div class="circle-container" ref="circle">
         <!-- Error Toast -->
@@ -292,7 +347,7 @@ onMounted(() => {
         >
           <template v-slot:header>
             <b v-if="index!==0">Activity {{ index }}</b>
-            <b v-if="index==0"></b>
+            <b v-if="index===0"></b>
             <i v-if="index!==0" @click="deleteBox(box)" class="bi bi-x-circle delete-icon"></i>
           </template>
           <template v-slot:body>
@@ -304,21 +359,24 @@ onMounted(() => {
             <p v-if="!box.isEditing"> {{ box.label }} </p>
             <select v-if="box.isSubCat && box.label!=='Start'" v-model="box.subcat" @change="finishSubCat(box)">
               <option disabled value="" selected>Select category</option>
-              <option v-if="box.label=='Tourism'" value="Museum">Museum</option>
-              <option v-if="box.label=='Tourism'" value="Attraction">Attraction</option>
-              <option v-if="box.label=='Tourism'" value="Gallery">Gallery</option>
-              <option v-if="box.label=='Tourism'" value="Zoo">Zoo</option>
-              <option v-if="box.label=='Tourism'" value="Park">Park</option>
-              <option v-if="box.label=='Amenity'" value="Cafe">Cafe</option>
-              <option v-if="box.label=='Amenity'" value="Bar">Bar</option>
-              <option v-if="box.label=='Amenity'" value="Ice Cream">Ice Cream</option>
-              <option v-if="box.label=='Amenity'" value="Fast Food">Fast Food</option>
-              <option v-if="box.label=='Amenity'" value="Restaurant">Restaurant</option>
+              <option v-if="box.label==='Tourism'" value="Museum">Museum</option>
+              <option v-if="box.label==='Tourism'" value="Attraction">Attraction</option>
+              <option v-if="box.label==='Tourism'" value="Gallery">Gallery</option>
+              <option v-if="box.label==='Tourism'" value="Zoo">Zoo</option>
+              <option v-if="box.label==='Tourism'" value="Park">Park</option>
+              <option v-if="box.label==='Amenity'" value="Cafe">Cafe</option>
+              <option v-if="box.label==='Amenity'" value="Bar">Bar</option>
+              <option v-if="box.label==='Amenity'" value="Ice Cream">Ice Cream</option>
+              <option v-if="box.label==='Amenity'" value="Fast Food">Fast Food</option>
+              <option v-if="box.label==='Amenity'" value="Restaurant">Restaurant</option>
             </select>
             <p v-if="!box.isSubCat && !box.isEditing && box.label!=='Start'"> {{ box.subcat }} </p>
           </template>
         </DraggableDiv>
         <DraggableLine v-for="(line, index) in lines.lines" :key="index" :line="line" />
+      </div>
+      <div class="lock-layer" v-if="!customizerEnabled">
+        <p class="lock-layer-text">{{ infomsg }}</p>
       </div>
 
       <div class="sidebar">
@@ -350,11 +408,11 @@ onMounted(() => {
           <hr>
           <!-- Date of Travel Input-->
           <label for="date" class="form-label">Day of Travel</label>
-          <input type="date" class="form-control" id="date" name="trip-start"/>
+          <input type="date" class="form-control" id="date" name="trip-start" :disabled="!addressEntered" @change="checkDateInput"/>
           <hr>
           <!-- max Travel Range from Start Input-->
           <label for="range" class="form-label">Range from starting point: {{ range }} km</label>
-          <input type="range" class="form-range custom-range" min="1" max="10" id="range" value="3" v-model="range" list="range-list">
+          <input type="range" class="form-range custom-range" min="1" max="10" id="range" value="3" v-model="range" list="range-list" :disabled="!dateEntered">
           <datalist id="range-list">
             <option value="0" label="1"></option>
             <option value="100" label="10"></option>
@@ -363,17 +421,17 @@ onMounted(() => {
           <!-- More Options Block-->
           <b>More Options</b>
           <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="barrierFree">
+            <input class="form-check-input" type="checkbox" role="switch" id="barrierFree" :disabled="!dateEntered">
             <label class="form-check-label" for="barrierFree">Consider only barrier free locations</label>
           </div>
           <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="vegan">
+            <input class="form-check-input" type="checkbox" role="switch" id="vegan" :disabled="!dateEntered">
             <label class="form-check-label" for="vegan">Amenities should have a Vegan Option</label>
           </div>
         </div>
         <!-- Buttons -->
-        <button class="plus" @click="addBox">Add location</button>
-        <button class="start" @click="setCookie" id="startRouting">Start routing</button>
+        <button class="plus" @click="addBox" :disabled="!dateEntered">Add location</button>
+        <button class="start" @click="setCookie" id="startRouting" :disabled="!routable">Start routing</button>
       </div>
     </main>
   </div>
@@ -393,6 +451,26 @@ hr{
 .quiz-container {
   color: var(--tt-dark);
   line-height: 1.6;
+}
+
+.lock-layer{
+  grid-area: circle;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1500;
+  background: rgba(92, 92, 92, 0.373);
+  width: 100%;
+  height: 100%;
+}
+
+.lock-layer-text{
+  font-size: 24pt;
+  font-weight: bold;
+  background-color: rgba(92, 92, 92, 0.85);
+  color: var(--tt-light);
+  padding: 1rem;
+  border-radius: 10px;
 }
 
 main {
@@ -438,10 +516,18 @@ main {
   background-color: var(--tt);
   color: var(--tt-dark);
 }
+.plus:disabled {
+  background-color: var(--tt-light) !important;
+  pointer-events: none !important;
+}
 
 .start {
   background-color: var(--tt-dark);
   color: var(--tt);
+}
+.start:disabled {
+  background-color: rgba(41, 29, 0, 0.78);
+  pointer-events: none !important;
 }
 
 .delete-icon{
