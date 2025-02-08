@@ -196,6 +196,47 @@ const finishSubCat = (box) => {
   })
 };
 
+const setIcon = (subcat) => {
+  let sub = subcat.toLowerCase().replace(" ", "_")
+  let iconUrl = ""
+  switch (sub) {
+    case 'attraction':
+      iconUrl = '../../src/assets/icons/Attraction.svg'; 
+      break;
+    case 'museum':
+      iconUrl =  '../../src/assets/icons/Museum.svg';
+      break;
+    case 'gallery':
+      iconUrl = '../../src/assets/icons/Gallery.svg';
+      break;
+    case 'zoo':
+      iconUrl = '../../src/assets/icons/Zoo.svg';
+      break;
+    case 'park':
+      iconUrl = '../../src/assets/icons/Park.svg';
+      break;
+    case 'ice_cream':
+      iconUrl = '../../src/assets/icons/Icecream.svg';
+      break;
+    case 'fast_food':
+      iconUrl = '../../src/assets/icons/Fastfood.svg';
+      break;
+    case 'cafe':
+      iconUrl = '../../src/assets/icons/Cafe.svg';
+      break;
+    case 'bar':
+      iconUrl = '../../src/assets/icons/Bar.svg';
+      break;
+    case 'restaurant':
+      iconUrl = '../../src/assets/icons/Restaurant.svg';
+      break;
+    default:
+      iconUrl = '../../src/assets/icons/Default.svg'; // defualt icon
+  }
+
+  return iconUrl
+}
+
 /**
  * Set a local Storage data object to give selected information to the map application
  */
@@ -293,7 +334,7 @@ onMounted(() => {
           <template v-slot:header>
             <b v-if="index!==0">Activity {{ index }}</b>
             <b v-if="index==0"></b>
-            <i v-if="index!==0" @click="deleteBox(box)" class="bi bi-x-circle delete-icon"></i>
+            <i v-if="index!==0" @click="deleteBox(box)" class="bi bi-trash delete-icon"></i>
           </template>
           <template v-slot:body>
             <select v-if="box.isEditing" v-model="box.label" @change="finishEditing(box)">
@@ -315,7 +356,7 @@ onMounted(() => {
               <option v-if="box.label=='Amenity'" value="Fast Food">Fast Food</option>
               <option v-if="box.label=='Amenity'" value="Restaurant">Restaurant</option>
             </select>
-            <p v-if="!box.isSubCat && !box.isEditing && box.label!=='Start'"> {{ box.subcat }} </p>
+            <p v-if="!box.isSubCat && !box.isEditing && box.label!=='Start'"> <img :src="setIcon(box.subcat)"/> {{ box.subcat }} </p>
           </template>
         </DraggableDiv>
         <DraggableLine v-for="(line, index) in lines.lines" :key="index" :line="line" />
