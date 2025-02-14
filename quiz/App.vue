@@ -5,14 +5,18 @@ import DraggableLine from "@/components/quiz/DraggableLine.vue";
 import { ref, reactive, onMounted, nextTick } from 'vue';
 import { useLinesStore } from "@/stores/store.js"
 import { Toast } from "bootstrap"
+import axios from "axios";
 
   const range = ref(3)
   const errmsg = ref()
   const infomsg = ref("Please select a starting point")
-  const addressEntered = ref(false)
+  const addressEntered = ref(true)
   const dateEntered = ref(false)
+  const loading = ref(false)
   const customizerEnabled = ref(false)
   const routable = ref(false)
+  const possibleOptionsTourism = ref([])
+  const possibleOptionsAmenity = ref([])
   const lines = useLinesStore();
   const circle = ref(null);
   const boxes = reactive([
@@ -89,20 +93,70 @@ const checkDateInput = (event) => {
   }
   if(addressEntered.value){
     if(event.target.value) {
-      let date = new Date(event.target.value).getTime() / 1000;
-      let now = Date.now()/1000;
-      if(date >= now){
+      let date = new Date(event.target.value);
+      let now = new Date(Date.now());
+      if(date.setHours(0,0,0,0) >= now.setHours(0,0,0,0)){
         dateEntered.value = true;
-        customizerEnabled.value = true;
+        infomsg.value = "Choose your desired Filters and apply them.";
       }else{
         infomsg.value = "Please select a valid date. The day of travel cannot be in the past";
         dateEntered.value = false;
-        customizerEnabled.value = false;
       }
     }
   }else {
     dateEntered.value = false;
   }
+}
+
+/**
+ * Sets Filter for customizer options and requests possible options
+ * */
+const setFilters = ()=> {
+  loading.value = true;
+  possibleOptionsTourism.value = [];
+  possibleOptionsAmenity.value = [];
+
+  let range = document.getElementById("range").value
+  let date = document.getElementById("date").value
+  let barrierFree = document.getElementById("barrierFree").checked
+  let vegan = document.getElementById("vegan").checked
+
+  let options = {
+    range: range,
+    date: date,
+    barrierFree: barrierFree,
+    vegan: vegan,
+    start_location: startLocation.value,
+  };
+
+  axios({
+    method: 'post',
+    url: `${import.meta.env.VITE_API_BASE_URL}/api/check`,
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "*/*"
+    },
+    data: JSON.stringify({"options": options}),
+  })
+      .then((response) => {
+        let possibilities = response.data.possible_options
+        if (possibilities.length < 1) {return -1}
+        for (let i = 0; i < possibilities.length; i++) {
+          if(possibilities[i].tourism){
+            possibleOptionsTourism.value.push({"label": "Tourism", text: possibilities[i].tourism})
+          }else if(possibilities[i].amenity){
+            possibleOptionsAmenity.value.push({"label": "Amenity", text: possibilities[i].amenity})
+          }
+        }
+      })
+      .finally(customizerEnabled.value = true)
+      .catch(error => {
+        console.log(error);
+        customizerEnabled.value = false
+        infomsg.value = "There was an error while applying the filters. Please try again.";
+      })
+  loading.value = false;
+
 }
 
 /**
@@ -398,18 +452,13 @@ onMounted(() => {
               <option value="Amenity">Amenity</option>
             </select>
             <p v-if="!box.isEditing"> {{ box.label }} </p>
-            <select v-if="box.isSubCat && box.label!=='Start'" v-model="box.subcat" @change="finishSubCat(box)">
+            <select v-if="box.isSubCat && box.label!=='Start' && box.label==='Amenity'" v-model="box.subcat" @change="finishSubCat(box)">
               <option disabled value="" selected>Select category</option>
-              <option v-if="box.label==='Tourism'" value="Museum">Museum</option>
-              <option v-if="box.label==='Tourism'" value="Attraction">Attraction</option>
-              <option v-if="box.label==='Tourism'" value="Gallery">Gallery</option>
-              <option v-if="box.label==='Tourism'" value="Zoo">Zoo</option>
-              <option v-if="box.label==='Tourism'" value="Park">Park</option>
-              <option v-if="box.label==='Amenity'" value="Cafe">Cafe</option>
-              <option v-if="box.label==='Amenity'" value="Bar">Bar</option>
-              <option v-if="box.label==='Amenity'" value="Ice Cream">Ice Cream</option>
-              <option v-if="box.label==='Amenity'" value="Fast Food">Fast Food</option>
-              <option v-if="box.label==='Amenity'" value="Restaurant">Restaurant</option>
+              <option v-for="(item, index) in possibleOptionsAmenity" :value="item.text" :key="index">{{ item.text }}</option>
+            </select>
+            <select v-if="box.isSubCat && box.label!=='Start' && box.label==='Tourism'" v-model="box.subcat" @change="finishSubCat(box)">
+              <option disabled value="" selected>Select category</option>
+              <option v-for="(item, index) in possibleOptionsTourism" :value="item.text" :key="index">{{ item.text }}</option>
             </select>
             <p v-if="!box.isSubCat && !box.isEditing && box.label!=='Start'"> <img :src="setIcon(box.subcat)"/> {{ box.subcat }} </p>
           </template>
@@ -417,7 +466,12 @@ onMounted(() => {
         <DraggableLine v-for="(line, index) in lines.lines" :key="index" :line="line" />
       </div>
       <div class="lock-layer" v-if="!customizerEnabled">
-        <p class="lock-layer-text">{{ infomsg }}</p>
+        <p class="lock-layer-text" v-if="!loading">{{ infomsg }}</p>
+        <div class="loading" v-if="loading">
+          <div class="spinner-border">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
       </div>
 
       <div class="sidebar">
@@ -471,7 +525,10 @@ onMounted(() => {
           </div>
         </div>
         <!-- Buttons -->
-        <button class="plus" @click="addBox" :disabled="!dateEntered">Add location</button>
+        <div class="btn-group" role="group" aria-label="Basic example">
+          <button class="plus btn" @click="setFilters" :disabled="!dateEntered">Apply Filter</button>
+          <button class="plus btn" @click="addBox" :disabled="!customizerEnabled">Add location</button>
+        </div>
         <button class="start" @click="setCookie" id="startRouting" :disabled="!routable">Start routing</button>
       </div>
     </main>
@@ -547,8 +604,7 @@ main {
 
 .plus, .start {
   padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
+  border: 1px solid var(--tt-dark);
   cursor: pointer;
   text-decoration: none;
 }
@@ -556,6 +612,16 @@ main {
 .plus {
   background-color: var(--tt);
   color: var(--tt-dark);
+}
+.plus:hover {
+  background-color: var(--tt);
+  color: var(--tt-dark);
+  border-color: var(--tt);
+}
+.plus:active:focus {
+  background-color: var(--tt);
+  color: var(--tt-dark);
+  border-color: var(--tt);
 }
 .plus:disabled {
   background-color: var(--tt-light) !important;
@@ -565,6 +631,7 @@ main {
 .start {
   background-color: var(--tt-dark);
   color: var(--tt);
+  border-radius: 5px;
 }
 .start:disabled {
   background-color: rgba(41, 29, 0, 0.78);
